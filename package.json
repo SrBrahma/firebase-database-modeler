@@ -1,0 +1,20 @@
+{
+  "name": "firebase-database-modeler",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SrBrahma/Firebase-Database-Modeler.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SrBrahma/Firebase-Database-Modeler/issues"
+  },
+  "homepage": "https://github.com/SrBrahma/Firebase-Database-Modeler#readme"
+}
