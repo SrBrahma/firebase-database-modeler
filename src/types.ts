@@ -20,7 +20,6 @@ type OmitRecursively<T extends any, K extends PropertyKey> = Omit<
 
 
 // Removes all the Node meta keys from the type, like _key, _path etc
-// mEmptyObj to also clear the _type.
 type NoMeta<T> = T extends obj ? OmitRecursively<T, AllNodeKeys> : T;
 
 
@@ -93,7 +92,8 @@ export type ModelLikeDbData<T> =
     >
   >;
 
-// Not used, but maybe will be useful someday.
 // https://stackoverflow.com/a/50375286/10247962
 // type UnionToIntersection<U> =
 //   (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never;
+
+// How to check exact type https://fettblog.eu/typescript-match-the-exact-object-shape/

@@ -40,12 +40,6 @@ export type Node<ChildrenOrType, Key extends string = string> = Id<Omit<{
 } & (ChildrenOrType extends obj ? ChildrenOrType : unknown),
   '_varNodeChild'>>; // We omit it, as isn't useful to the user, outside the implementation.
 
-// How to check exact type https://fettblog.eu/typescript-match-the-exact-object-shape/
-// type CheckMEmptyObj<T> = T extends mEmptyObj
-//   ? (Exclude<keyof T, keyof mEmptyObj> extends never
-//     ? true : false)
-//   : false;
-
 // Node can be a VarNode or NoVarNode. A type of Node that any kind of Node extends it.
 export type AnyNode = Node<unknown, string>;
 
