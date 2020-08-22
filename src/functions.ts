@@ -5,7 +5,12 @@ import { deepClone, isNode } from './aux';
 
 export let database: Database;
 
-export function modelerSetDatabase(databaseInstance: Database) {
+
+/**
+ * You must call this with the return of your firebase.database().
+ * @param {Database} databaseInstance
+ */
+export function modelerSetDatabase(databaseInstance: any) {
   database = databaseInstance;
 }
 
