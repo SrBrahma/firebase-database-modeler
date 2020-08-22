@@ -11,3 +11,4 @@ export function applyPaths<T>(model: T, initialPath = ''): T {
 
 export { _, _$ } from './node';
 export { modelerSetDatabase } from './functions';
+export { mEmptyObj } from './aux';
