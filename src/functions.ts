@@ -48,6 +48,8 @@ export function recursivePather(currentObj: any, parentPath: string, forcedPath?
     currentObj._path = forcedPath;
   else if (!parentPath)
     currentObj._path = currentObj._key;
+  else if (parentPath === '/')
+    currentObj._path += currentObj._key;
   else
     currentObj._path = parentPath + '/' + currentObj._key;
 
