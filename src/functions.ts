@@ -107,7 +107,7 @@ export function dataFromDb<T extends AnyNode>(model: T, dbData: any, addDataNotI
   for (const [key, value] of Object.entries(dbData) as [string, any][]) {
 
     if ((model as any)._varNodeChild)
-      newObj[key] = dataFromDb(value, (model as any)._varNodeChild);
+      newObj[key] = dataFromDb((model as any)._varNodeChild, value);
 
     else {
       const modelEntry = Object.entries(model)

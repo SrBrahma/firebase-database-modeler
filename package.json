@@ -1,13 +1,13 @@
 {
   "name": "firebase-database-modeler",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "",
   "main": "lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy": "tsc -d && npm publish",
-    "patch": "tsc -d && npm --no-git-tag-version version patch && npm publish",
-    "minor": "tsc -d && npm --no-git-tag-version version minor && npm publish"
+    "patch": "npm --no-git-tag-version version patch",
+    "minor": "npm --no-git-tag-version version minor"
   },
   "repository": {
     "type": "git",
