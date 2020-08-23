@@ -1,3 +1,11 @@
+<div align="center">
+
+# Firebase Database Modeler
+
+[![npm version](https://badge.fury.io/js/firebase-functions-extended.svg)](https://www.npmjs.com/package/firebase-functions-extended)
+
+</div>
+
 Project not ready yet! Still fixing bugs and writing this README. Should be ready in a couple of weeks. I am using it in a real project, so the presentation of this one isn't the focus right now.
 
 This Readme will still be improved and completed. Some stuff here is already deprecated.
