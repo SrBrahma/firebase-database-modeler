@@ -82,11 +82,11 @@ export function dataToDb(model: AnyNode, data: any): any {
 
     // The model node is a parent of a VarNode.
     if ((model as any)._varNodeChild)
-      newObj[key] = dataToDb(value, (model as any)._varNodeChild);
+      newObj[key] = dataToDb((model as any)._varNodeChild, value);
 
     // The model have a corresponding key
     else if (model.hasOwnProperty(key))
-      newObj[(model as any)[key]['_key']] = dataToDb(value, (model as any)[key]);
+      newObj[(model as any)[key]['_key']] = dataToDb((model as any)[key], value);
 
     // It's some non-modeled data entered. We will always add it. (?)
     else
