@@ -4,6 +4,8 @@
 
 [![npm version](https://badge.fury.io/js/firebase-functions-extended.svg)](https://www.npmjs.com/package/firebase-functions-extended)
 
+<!-- fix me link -->
+
 </div>
 
 Project not ready yet! Still fixing bugs and writing this README. Should be ready in a couple of weeks. I am using it in a real project, so the presentation of this one isn't the focus right now.
@@ -59,9 +61,9 @@ stores.$storeId.name._ref(aStoreId).set('New Name!')
 
 # API
 
-## Functions
+<b><h2> Functions </h2></b>
 
-### \_(key: string, nestedNode?: Node)
+<b><h3> \_(key: string, nestedNode?: Node) </h3></b>
 
 Creates a new node. First parameter is the node key; the name of it in the database.
 
@@ -80,7 +82,7 @@ const root
 database.second.nested._key(); // = 'stuff'
 ```
 
-### \_\$(key: string, nestedNode?: Node)
+<b><h3> \_\$(key: string, nestedNode?: Node) </h3></b>
 
 Creates a new Variable Node.
 
@@ -93,70 +95,105 @@ const users = _$({
 
 # Node properties
 
-## \_key: string
+<b><h3> \_key: string </h3></b>
 
 Returns the value you entered as the first argument of the \_ function.
 Is the last part of the path.
 
-E.g.:
+```typescript
+// E.g.:
+users.$userId.stores._key; // Returns 'stores'
+```
 
-`users.$userId.stores._key // Returns 'stores'`
+</br>
 
-### \_path: string
+<b><h3> \_path: string </h3></b>
 
 Returns the entire path (hierarchical concatenation of all keys). '\$' keys variables aren't converted.
 
-E.g.:
+```typescript
+// E.g.:
+stores.$storeId.name_path; // Returns 'stores/$/n'
+```
 
-`stores.$storeId.name_path // Returns 'stores/$/n'`
+</br>
 
-### \_pathWithVars(...vars: string[]) => string
+<b><h3> \_pathWithVars (...vars: string[]) => string </h3></b>
 
 Returns the path with '\$' variables converted. For each Variable Node, you must pass
 its string value as parameter.
 
-E.g.:
+```typescript
+// E.g.:
+stores.$storeId.users.$userId_pathWithVars("abc", "DEADBEEF"); // Returns 'stores/abc/users/DEADBEEF
+```
 
-`stores.$storeId.users.$userId_pathWithVars('abc', 'DEADBEEF') // Returns 'stores/abc/users/DEADBEEF`
+</br>
 
-### \_ref(...vars: string[]) => Reference
+<b><h3> \_ref (...vars: string[]) => Reference </h3></b>
 
 Returns a Realtime Database reference while using the same working of \_pathWithVars.
 
-E.g.:
+```typescript
+// E.g.:
+stores.$storeId.rating._ref("abc").set(2.7);
+```
 
-`stores.$storeId.rating._ref('abc').set(2.7)`
+</br>
 
-### \_dbType
+<b><h3> \_dbType : ModelLikeDbData </h3></b>
 
-Use it with typescript typeof to ...
+Use it with Typescript `typeof` to get the ModelLikeDbData type of the node. Its value is undefined, so, only useful for getting the type.
 
-### \_dataToDb(data: ModelLikeDbData) => any
+</br>
+
+<b><h3> \_dataToDb (data: ModelLikeDbData) => any </h3></b>
 
 Converts the inputted data to your database schema
 
-### \_dataFromDb
+</br>
+
+<b><h3> \_dataFromDb (data: any) => ModelLikeDbData </h3></b>
 
 Converts data from the database (gotten with on() or once()) to a model-like object, with typing.
 
-### \_onceVal(event: EventType) => ModelLikeDbData
+</br>
+
+<b><h3> \_onceVal (event: EventType, ...vars: string[]) => ModelLikeDbData </h3></b>
 
 Same as model.\_dataFromDb(await model.\_ref(vars).once(event)).val()).
 
-### \_onVal(event: EventType, callback())
+</br>
 
-### \_exists (...vars: string[]): Promise<boolean>
+<b><h3> \_onVal (event: EventType, callback: (data: ModelLikeDbData) => void, ...vars: string[]) => Reference </h3></b>
+
+Like Firebase ref.on(), it will call the callback for every time the event happens. But, this one will also call `model._dataFromDb(snapshot.val())` on the callback data.
+
+</br>
+
+<b><h3> \_exists (...vars: string[]): Promise<boolean> </h3></b>
 
 Returns if the reference exists.
 Same as (await model.\_ref(vars).once('value')).exists()
 
-E.g.:
+```typescript
+// E.g.:
+await stores.$storeId.rating._exists(); // Will return true or false.
+```
 
-`await stores.$storeId.rating._exists() // Will return true or false.`
+</br>
 
-### \_clone
+<b><h3> \_clone \<T> (...vars: string[]) => T </h3></b>
+
+Deep clones the node applying vars to the '\$' keys in the path. Useful for not having to pass the vars all the time to a fixed ...
+
+<br/>
 
 # Roadmap
+
+- Optional properties
+
+- Optional database key; it would use the property key as the database key.
 
 - A generator for [Bolt](https://github.com/FirebaseExtended/bolt) using a model, or generate a model using a Bolt file.
 
