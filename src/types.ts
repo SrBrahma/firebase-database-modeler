@@ -75,7 +75,7 @@ type getVarNodeChild<T> = { [K in keyof T]: T[K] extends SoftVarNode ? T[K] : ne
 type applyVarNodeIfChild<T> = T extends obj
   ? (getVarNodeChild<T> extends never
     ? { [K in keyof T]: applyVarNodeIfChild<T[K]> }
-    : { [P in string]: applyVarNodeIfChild<getVarNodeChild<T>> | null; })
+    : { [P in string]: applyVarNodeIfChild<getVarNodeChild<T>> } | null)
   : T;
 
 // T is the model. It returns how db data looks like in a model-like way.
