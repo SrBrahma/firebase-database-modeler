@@ -10,14 +10,12 @@
 
 Project not ready yet! Still fixing bugs and writing this README. Should be ready in a couple of weeks. I am using it in a real project, so the presentation of this one isn't the focus right now.
 
-This Readme will still be improved and completed. Some stuff here is already deprecated.
-
 Supports firebase, firebase-admin and react-native-firebase packages
 
 # Usage:
 
 ```typescript
-import { createModel, _, _$, mEmptyObj, modelerSetDatabase } from 'firebase-database-modeler';
+import { finishModel, _, _$, mEmptyObj, modelerSetDatabase } from 'firebase-database-modeler';
 
 // There are multiple ways of setting up the database depending of the firebase package
 // you are using (firebase, firebase-admin or react-native-firebase).
@@ -61,7 +59,11 @@ stores.$storeId.name._ref(aStoreId).set('New Name!')
 
 # API
 
+</br>
+
 <b><h2> Functions </h2></b>
+
+</br>
 
 <b><h3> \_(key: string, nestedNode?: Node) </h3></b>
 
@@ -82,6 +84,8 @@ const root
 database.second.nested._key(); // = 'stuff'
 ```
 
+</br>
+
 <b><h3> \_\$(key: string, nestedNode?: Node) </h3></b>
 
 Creates a new Variable Node.
@@ -93,7 +97,13 @@ const users = _$({
 });
 ```
 
-# Node properties
+<b><h3> finishModel </h3></b>
+
+</br>
+
+<b><h2> Node properties </h2></b>
+
+</br>
 
 <b><h3> \_key: string </h3></b>
 
@@ -187,6 +197,7 @@ await stores.$storeId.rating._exists(); // Will return true or false.
 
 Deep clones the node applying vars to the '\$' keys in the path. Useful for not having to pass the vars all the time to a fixed ...
 
+<br/>
 <br/>
 
 # Roadmap
