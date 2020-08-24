@@ -4,9 +4,9 @@
 
 [![npm version](https://badge.fury.io/js/firebase-functions-extended.svg)](https://www.npmjs.com/package/firebase-functions-extended)
 
-<!-- fix me link -->
-
 </div>
+
+<!-- fix me link -->
 
 Project not ready yet! Still fixing bugs and writing this README. Should be ready in a couple of weeks. I am using it in a real project, so the presentation of this one isn't the focus right now.
 
@@ -171,7 +171,7 @@ Like Firebase ref.on(), it will call the callback for every time the event happe
 
 </br>
 
-<b><h3> \_exists (...vars: string[]): Promise<boolean> </h3></b>
+<b><h3> \_exists (...vars: string[]): Promise\<boolean> </h3></b>
 
 Returns if the reference exists.
 Same as (await model.\_ref(vars).once('value')).exists()
