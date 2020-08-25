@@ -1,6 +1,6 @@
 {
   "name": "firebase-database-modeler",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "",
   "main": "lib/index.js",
   "scripts": {
@@ -14,7 +14,13 @@
     "type": "git",
     "url": "git+https://github.com/SrBrahma/Firebase-Database-Modeler.git"
   },
-  "keywords": [],
+  "keywords": [
+    "firebase",
+    "google",
+    "realtime",
+    "database",
+    "model"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {

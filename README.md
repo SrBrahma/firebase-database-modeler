@@ -6,8 +6,6 @@
 
 </div>
 
-<!-- fix me link -->
-
 Project not ready yet! Still fixing bugs and writing this README. Should be ready in a couple of weeks. I am using it in a real project, so the presentation of this one isn't the focus right now.
 
 Supports firebase, firebase-admin and react-native-firebase packages
@@ -74,10 +72,10 @@ The second parameter allows nesting.
 You may pass a type to it.
 
 ```typescript
-const root
-  first: _('1st'),
-  second: _('second', {
-    nested: _<string>('stuff'),
+const root = _("/", {
+  first: _("1st"),
+  second: _("second", {
+    nested: _<string>("stuff"),
   }),
 });
 
