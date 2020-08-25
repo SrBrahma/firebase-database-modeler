@@ -1,8 +1,8 @@
-<div align="center">
+<div align='center'>
 
 # Firebase Database Modeler
 
-[![npm version](https://badge.fury.io/js/firebase-functions-extended.svg)](https://www.npmjs.com/package/firebase-functions-extended)
+[![npm version](https://badge.fury.io/js/firebase-database-modeler.svg)](https://www.npmjs.com/package/firebase-database-modeler)
 
 </div>
 
