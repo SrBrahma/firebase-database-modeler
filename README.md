@@ -193,13 +193,13 @@ await stores.$storeId.rating._exists(); // Will return true or false.
 
 <b><h3> \_set (value: ModelLikeDbData, ...vars: string[]) => Promise\<any> </h3></b>
 
-Same as model.\_ref(vars).set(value), with type checking on value.
+Same as model.\_ref(vars).set(model._dataToDb(value)), with type checking on value.
 
 </br>
 
 <b><h3> \_update (value: Partial\<ModelLikeDbData>, ...vars: string[]) => Promise\<any> </h3></b>
 
-Same as model.\_ref(vars).update(value), with type checking on value.
+Same as model.\_ref(vars).update(model._dataToDb(value)), with type checking on value.
 
 As the value have a Partial<> wrapping the ModelLikeDbData, its root properties are optional.
 

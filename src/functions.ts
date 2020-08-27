@@ -43,11 +43,11 @@ export function onVal<T extends AnyNode>(model: T, event: EventType, callback: (
 }
 
 export async function set(model: AnyNode, value: any, ...vars: string[]): Promise<any> {
-  return await model._ref(...vars).set(value)
+  return await model._ref(...vars).set(model._dataToDb(value));
 }
 
 export async function update(model: AnyNode, value: any, ...vars: string[]): Promise<any> {
-  return await model._ref(...vars).update(value)
+  return await model._ref(...vars).update(model._dataToDb(value));
 }
 
 // Push doesn't return a promise. Think in the best way of doing it but also returning the ref
