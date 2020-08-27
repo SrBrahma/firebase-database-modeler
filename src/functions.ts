@@ -87,7 +87,7 @@ export function cloneModel<T extends AnyNode>(model: T, ...vars: string[]): T {
 // Gets a model-like object and makes it compatible with the db schema.
 // It's only a object as a parameter, because if you want to pass a boolean e.g., just use set().
 export function dataToDb(model: AnyNode, data: any): any {
-  if (typeof data !== 'object' || data === null || !model)
+  if (typeof data !== 'object' || data === null)
     return data;
 
   const newObj: any = {};
@@ -95,13 +95,19 @@ export function dataToDb(model: AnyNode, data: any): any {
   // Cycle throught all current children
   for (const [key, value] of Object.entries(data) as [string, any][]) {
 
+    // Points to the varNodeChild, if there is one.
+    // As any as _varNodeChild is ommited from Node type
+    const varNodeChild = (model as any)._varNodeChild;
+
     // The model node is a parent of a VarNode.
-    if ((model as any)._varNodeChild)
-      newObj[key] = dataToDb((model as any)._varNodeChild, value);
+    if (varNodeChild) // As any as _varNodeChild is omitted from the Node type.
+      newObj[key] = dataToDb(varNodeChild, value);
 
     // The model have a corresponding key
-    else if (model.hasOwnProperty(key))
-      newObj[(model as any)[key]['_key']] = dataToDb((model as any)[key], value);
+    else if (model.hasOwnProperty(key)) {
+      const correspondingModel = (model as any)[key];
+      newObj[correspondingModel['_key']] = dataToDb(correspondingModel, value);
+    }
 
     // It's some non-modeled data entered. We will always add it. (?)
     else
@@ -110,10 +116,11 @@ export function dataToDb(model: AnyNode, data: any): any {
   return newObj;
 }
 
-// It is like the make() but somewhat the inverse of it.
-export function dataFromDb<T extends AnyNode>(model: T, dbData: any, addDataNotInModel: boolean = false): any {
+// It is like the dataToDb() but somewhat the inverse of it.
+// TODO: Add addDataNotInModel to _onceVal and _onVal (overloading).
+export function dataFromDb<T extends AnyNode>(model: T, dbData: any, addDataNotInModel: boolean = true): any {
 
-  if (typeof dbData !== 'object' || dbData === null || !model)
+  if (typeof dbData !== 'object' || dbData === null)
     return dbData;
 
   const newObj: any = {};
@@ -121,16 +128,22 @@ export function dataFromDb<T extends AnyNode>(model: T, dbData: any, addDataNotI
   // Cycle throught all current children
   for (const [key, value] of Object.entries(dbData) as [string, any][]) {
 
-    if ((model as any)._varNodeChild)
-      newObj[key] = dataFromDb((model as any)._varNodeChild, value);
+    // Points to the varNodeChild, if there is one.
+    // As any as _varNodeChild is ommited from Node type
+    const varNodeChild = (model as any)._varNodeChild;
+
+    if (varNodeChild)
+      newObj[key] = dataFromDb(varNodeChild, value);
 
     else {
+      // TODO: Model could have a ommited prop that would hold children (maybe only _key?), for faster find()'ing
       const modelEntry = Object.entries(model)
-        .find(([, mVal]) => isNode(mVal) && (mVal as any)._key === key);
+        .find(([, modelProp]) => isNode(modelProp) && (modelProp as AnyNode)._key === key
+        ) as [string, AnyNode] | undefined;
 
-      // We found the corresponding modelKey
+      // We found the corresponding modelKey (modelEntry[0]).
       if (modelEntry)
-        newObj[modelEntry[0]] = value;
+        newObj[modelEntry[0]] = dataFromDb(modelEntry[1], value);
 
       // Corresponding model not found. if addDataNotInModel, copy the data anyway, with the given key.
       else if (addDataNotInModel)

@@ -169,7 +169,7 @@ Converts data from the database (gotten with on() or once()) to a model-like obj
 
 <b><h3> \_onceVal (event: EventType, ...vars: string[]) => ModelLikeDbData </h3></b>
 
-Same as model.\_dataFromDb(await model.\_ref(vars).once(event)).val()).
+Same as model.\_dataFromDb(await model.\_ref(vars).once(event)).val().
 
 </br>
 
