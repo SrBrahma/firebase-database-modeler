@@ -42,6 +42,21 @@ export function onVal<T extends AnyNode>(model: T, event: EventType, callback: (
   return ref;
 }
 
+export async function set(model: AnyNode, value: any, ...vars: string[]): Promise<any> {
+  return await model._ref(...vars).set(value)
+}
+
+export async function update(model: AnyNode, value: any, ...vars: string[]): Promise<any> {
+  return await model._ref(...vars).update(value)
+}
+
+// Push doesn't return a promise. Think in the best way of doing it but also returning the ref
+// Thenables?
+// https://stackoverflow.com/questions/38768576/in-firebase-when-using-push-how-do-i-get-the-unique-id-and-store-in-my-databas
+// https://stackoverflow.com/questions/50031142/firebase-push-promise-never-resolves
+// export async function push(model: AnyNode, value: any, ...vars: string[]): Promise<any> {
+//   return model._ref(...vars).push(value)
+// }
 
 export function recursivePather(currentObj: any, parentPath: string, forcedPath?: string): void {
   if (forcedPath !== undefined)

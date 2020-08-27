@@ -1,4 +1,4 @@
-import { ref, cloneModel, dataToDb, dataFromDb, onceVal, onVal, exists, pathWithVars } from './functions';
+import { ref, cloneModel, dataToDb, dataFromDb, onceVal, onVal, exists, pathWithVars, set, update } from './functions';
 import { Reference, EventType } from '@firebase/database-types';
 import { ModelLikeDbData, Id } from './types';
 import { obj, getVarNodeChild } from './aux';
@@ -34,6 +34,9 @@ export type Node<ChildrenOrType, Key extends string = string> = Id<Omit<{
   readonly _onVal: (event: EventType, callback: (val: ModelLikeDbData<Node<ChildrenOrType, Key>> | null) => void, ...vars: string[]) => Reference;
 
   readonly _exists: (...vars: string[]) => Promise<boolean>;
+
+  readonly _set: (value: ModelLikeDbData<Node<ChildrenOrType, Key>>, ...vars: string[]) => Promise<any>
+  readonly _update: (value: Partial<ModelLikeDbData<Node<ChildrenOrType, Key>>>, ...vars: string[]) => Promise<any>
 
   readonly _dbType: ModelLikeDbData<ChildrenOrType>; // We don't pass the Node here because it would throw a circular dep
 
@@ -92,6 +95,12 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
     },
     _exists(...vars: string[]): Promise<boolean> {
       return exists(this, ...vars);
+    },
+    _set(value: LocalModelLikeDbData, ...vars: string[]) {
+      return set(this, value, ...vars)
+    },
+    _update(value: Partial<LocalModelLikeDbData>, ...vars: string[]) {
+      return update(this, value, ...vars)
     },
     _type: undefined,
     ...children,

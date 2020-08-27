@@ -39,7 +39,7 @@ const root = _('/', {
 // This must be called after setting your model at the root of your model.
 finishModel(root);
 
-stores.push(
+stores._ref().push(
   // Using _dataToDb function, we get Intellisense help to construct the object, and it also converts the model keys to the DB keys!
   stores._dataToDb({
     name: 'Cool Store',
@@ -191,6 +191,20 @@ await stores.$storeId.rating._exists(); // Will return true or false.
 
 </br>
 
+<b><h3> \_set (value: ModelLikeDbData, ...vars: string[]) => Promise\<any> </h3></b>
+
+Same as model.\_ref(vars).set(value), with type checking on value.
+
+</br>
+
+<b><h3> \_update (value: Partial\<ModelLikeDbData>, ...vars: string[]) => Promise\<any> </h3></b>
+
+Same as model.\_ref(vars).update(value), with type checking on value.
+
+As the value have a Partial<> wrapping the ModelLikeDbData, its root properties are optional.
+
+</br>
+
 <b><h3> \_clone \<T> (...vars: string[]) => T </h3></b>
 
 Deep clones the node applying vars to the '\$' keys in the path. Useful for not having to pass the vars all the time to a fixed ...
@@ -200,12 +214,14 @@ Deep clones the node applying vars to the '\$' keys in the path. Useful for not 
 
 # Roadmap
 
-- Optional properties
+- Optional properties.
 
-- Optional database key; it would use the property key as the database key.
+- Optional database key; it would use the property key as the database key, getting them on finishModel().
 
 - A generator for [Bolt](https://github.com/FirebaseExtended/bolt) using a model, or generate a model using a Bolt file.
 
 - Firestore support. Easy to add, but I don't think I will ever use Firestore again (its max 1 write per second is a big limitation).
 
-- \_set() and \_push() with ModelLikeDbData
+- \_push() with ModelLikeDbData
+
+- Code testing
