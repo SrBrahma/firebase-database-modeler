@@ -1,25 +1,31 @@
-<div align='center'>
-
 # Firebase Database Modeler
 
 [![npm version](https://badge.fury.io/js/firebase-database-modeler.svg)](https://www.npmjs.com/package/firebase-database-modeler)
-
-</div>
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+[![TypeScript](https://badgen.net/npm/types/env-var)](http://www.typescriptlang.org/)
 
 Project not ready yet! Still fixing bugs and writing this README. Should be ready in a couple of weeks. I am using it in a real project, so the presentation of this one isn't the focus right now.
 
 Supports firebase, firebase-admin and react-native-firebase packages
 
-# Usage:
+# Instalation
+
+```js
+npm install --save firebase-database-modeler
+// or
+yarn add firebase-database-modeler
+```
+
+# Usage
 
 ```typescript
 import { finishModel, _, _$, mEmptyObj, modelerSetDatabase } from 'firebase-database-modeler';
 
 // There are multiple ways of setting up the database depending of the firebase package
 // you are using (firebase, firebase-admin or react-native-firebase).
-// The main point here is: you have to get the .database()
-
+// Read their docs to see how to obtain the respective firebase.database().
 const database = firebase.database()
+
 modelerSetDatabase(database)
 
 const stores = _('stores', {
@@ -59,11 +65,11 @@ stores.$storeId.name._ref(aStoreId).set('New Name!')
 
 </br>
 
-<b><h2> Functions </h2></b>
+## Functions
 
 </br>
 
-<b><h3> \_(key: string, nestedNode?: Node) </h3></b>
+<b><h3> \_(key: string, nestedNode?: Node) => Node </h3></b>
 
 Creates a new node. First parameter is the node key; the name of it in the database.
 
@@ -84,7 +90,7 @@ database.second.nested._key(); // = 'stuff'
 
 </br>
 
-<b><h3> \_\$(key: string, nestedNode?: Node) </h3></b>
+<b><h3> \_\$(key: string, nestedNode?: Node) => Node </h3></b>
 
 Creates a new Variable Node.
 
@@ -95,11 +101,14 @@ const users = _$({
 });
 ```
 
-<b><h3> finishModel </h3></b>
+<b><h3> finishModel(model: Node, initialPath: string = '') </h3></b>
+
+You must call it after setting up the model to recursively apply the _path's.
+
 
 </br>
 
-<b><h2> Node properties </h2></b>
+## Node properties
 
 </br>
 
