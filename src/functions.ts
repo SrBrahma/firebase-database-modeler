@@ -18,8 +18,14 @@ export function modelerSetDatabase(databaseInstance: any) {
 // As const instead of inline for performance.
 const allDolarRegex = new RegExp('\\$', 'g');
 
+// TODO: Improve error throw (where it happened?)
 export function pathWithVars(path: string, ...vars: string[]) {
-  return path.replace(allDolarRegex, () => vars.shift()!);
+  return path.replace(allDolarRegex, () => {
+    const val = vars.shift();
+    if (val === '' || val === undefined || val === null)
+      throw Error(`Firebase Database Modeler: Variable not set in vars, value = ${val}`);
+    return val;
+  });
 }
 
 export function ref(model: AnyNode, ...vars: string[]): Reference {
