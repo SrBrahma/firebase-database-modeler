@@ -71,6 +71,10 @@ export async function push(model: AnyNode, value: any, ...vars: string[]): Promi
   return await model._ref(...vars).push(model._dataToDb(value));
 }
 
+export async function remove(model: AnyNode, ...vars: string[]): Promise<any> {
+  return await model._ref(...vars).remove();
+}
+
 export function recursivePather(currentObj: any, parentPath: string, forcedPath?: string): void {
   if (forcedPath !== undefined)
     currentObj._path = forcedPath;

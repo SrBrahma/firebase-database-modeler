@@ -195,7 +195,7 @@ Converts data from the database (gotten with on() or once()) to a model-like obj
 
 <b><h3> \_onceVal (event: EventType, ...vars: string[]) => ModelLikeDbData </h3></b>
 
-Same as model.\_dataFromDb(await model.\_ref(vars).once(event)).val().
+Same as `model._dataFromDb(await model.\_ref(vars).once(event)).val()`.
 
 <br/>
 
@@ -209,7 +209,7 @@ Like Firebase ref.on(), it will call the callback for every time the event happe
 <b><h3> \_exists (...vars: string[]): Promise\<boolean> </h3></b>
 
 Returns if the reference exists.
-Same as (await model.\_ref(vars).once('value')).exists()
+Same as `(await model._ref(vars).once('value')).exists()`
 
 ```typescript
 // E.g.:
@@ -221,32 +221,33 @@ await stores.$storeId.rating._exists(); // Will return true or false.
 
 <b><h3> \_set (value: ModelLikeDbData, ...vars: string[]) => Promise\<any> </h3></b>
 
-Same as model.\_ref(vars).set(model._dataToDb(value)), with type checking on value.
+Same as `model._ref(vars).set(model._dataToDb(value))`, with type checking on value.
 
 
 <br/>
 
 <b><h3> \_update (value: Partial\<ModelLikeDbData>, ...vars: string[]) => Promise\<any> </h3></b>
 
-Same as model.\_ref(vars).update(model._dataToDb(value)), with type checking on value.
+Same as `model._ref(vars).update(model._dataToDb(value))`, with type checking on value.
 
 As the value have a Partial<> wrapping the ModelLikeDbData, its root properties are optional.
 
 
 <br/>
 
-<b><h3> \_push (value: Partial\<ModelLikeDbData>, ...vars: string[]) => Promise\<any> </h3></b>
+<b><h3> \_push (value: \<ModelLikeDbData>, ...vars: string[]) => Promise\<any> </h3></b>
 
-Same as model.\_ref(vars).push((model._dataToDb(value))), with type checking on value.
+Same as `model._ref(vars).push((model._dataToDb(value)))`, with type checking on value.
 
 With the same working of ref().push(), you may pass undefined as the `value` to just create the reference (to access the client side `key` property), without actually storing the new data. To learn more about it, Google it!
 
+If the child of the used model is a VarNode, the `value` type will smartly be `~"ModelLikeDbData<child>"`
 
 <br/>
 
 <b><h3> \_clone \<T> (...vars: string[]) => T </h3></b>
 
-Deep clones the node applying vars to the '\$' keys in the path. Useful for not having to pass the vars all the time to a fixed ...
+Deep clones the node applying vars to the '\$' keys in the path. Useful for not having to pass the vars all the time to a fixed ...(TODO)
 
 <br/>
 <br/>
@@ -260,7 +261,5 @@ Deep clones the node applying vars to the '\$' keys in the path. Useful for not 
 - A generator for [Bolt](https://github.com/FirebaseExtended/bolt) using a model, or generate a model using a Bolt file.
 
 - Firestore support. Easy to add, but I don't think I will ever use Firestore again (its max 1 write per second is a big limitation).
-
-- \_push() with ModelLikeDbData
 
 - Code testing
