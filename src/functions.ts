@@ -17,14 +17,20 @@ export function modelerSetDatabase(databaseInstance: any) {
 
 // As const instead of inline for performance.
 const allDolarRegex = new RegExp('\\$', 'g');
+const validSegmentChars = /^[a-zA-Z0-9_-]+$/; // Also tests for '' (empty string).
+
+export function pathSegmentIsValid(segment: string): boolean {
+  return ((typeof segment === 'string')
+    && (validSegmentChars.test(segment)));
+}
 
 export function pathWithVars(path: string, ...vars: string[]) {
   let varsI = 0;
   return path.replace(allDolarRegex, () => {
     const val = vars[varsI++];
-    if (val === '' || val === undefined || val === null)
+    if (!pathSegmentIsValid(val))
       throw Error(`Firebase Database Modeler: vars[${varsI}] not set or has an invalid value (= ${val}).`
-        + ` vars = ${vars}`);
+        + ` vars = ${vars}. Regex valid pattern = ${validSegmentChars.source}`);
     return val;
   });
 }
@@ -57,13 +63,13 @@ export async function update(model: AnyNode, value: any, ...vars: string[]): Pro
   return await model._ref(...vars).update(model._dataToDb(value));
 }
 
-// Push doesn't return a promise. Think in the best way of doing it but also returning the ref
-// Thenables?
+// TODO: Improve it ?
 // https://stackoverflow.com/questions/38768576/in-firebase-when-using-push-how-do-i-get-the-unique-id-and-store-in-my-databas
 // https://stackoverflow.com/questions/50031142/firebase-push-promise-never-resolves
-// export async function push(model: AnyNode, value: any, ...vars: string[]): Promise<any> {
-//   return model._ref(...vars).push(value)
-// }
+// https://stackoverflow.com/a/49918443/10247962
+export async function push(model: AnyNode, value: any, ...vars: string[]): Promise<any> {
+  return await model._ref(...vars).push(model._dataToDb(value));
+}
 
 export function recursivePather(currentObj: any, parentPath: string, forcedPath?: string): void {
   if (forcedPath !== undefined)
@@ -94,7 +100,7 @@ export function cloneModel<T extends AnyNode>(model: T, ...vars: string[]): T {
 // Gets a model-like object and makes it compatible with the db schema.
 // It's only a object as a parameter, because if you want to pass a boolean e.g., just use set().
 export function dataToDb(model: AnyNode, data: any): any {
-  if (typeof data !== 'object' || data === null)
+  if (typeof data !== 'object' || data === null) // undefined will also be catch here
     return data;
 
   const newObj: any = {};

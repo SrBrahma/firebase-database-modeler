@@ -67,11 +67,11 @@ stores.$storeId.name._ref(aStoreId).set('New Name!')
 
 # API
 
-</br>
+<br/>
 
 ## Functions
 
-</br>
+<br/>
 
 <b><h3> \_(key: string, nestedNode?: Node) => Node </h3></b>
 
@@ -92,7 +92,7 @@ const root = _("/", {
 database.second.nested._key(); // = 'stuff'
 ```
 
-</br>
+<br/>
 
 <b><h3> \_\$(key: string, nestedNode?: Node) => Node </h3></b>
 
@@ -110,11 +110,20 @@ const users = _$({
 You must call it after setting up the model to recursively apply the _path's.
 
 
-</br>
+<br/>
+
+<b><h3> pathSegmentIsValid(segment: string): boolean </h3></b>
+
+A path segment is "each/part/of/a/path", separated by '/'. This function checks if the given segment is a string, and if matches the RegEx `/^[a-zA-Z0-9_-]+$/` . Useful to check if the client/server is using a valid and safe path.
+
+This is automatically called by `_pathWithVars` (see below)
+
+
+<br/>
 
 ## Node properties
 
-</br>
+<br/>
 
 <b><h3> \_key: string </h3></b>
 
@@ -126,7 +135,8 @@ Is the last part of the path.
 users.$userId.stores._key; // Returns 'stores'
 ```
 
-</br>
+
+<br/>
 
 <b><h3> \_path: string </h3></b>
 
@@ -137,19 +147,21 @@ Returns the entire path (hierarchical concatenation of all keys). '\$' keys vari
 stores.$storeId.name_path; // Returns 'stores/$/n'
 ```
 
-</br>
+
+<br/>
 
 <b><h3> \_pathWithVars (...vars: string[]) => string </h3></b>
 
-Returns the path with '\$' variables converted. For each Variable Node, you must pass
-its string value as parameter.
+Returns the path with *'\$'* variables converted. For each Variable Node, you must pass
+its string value as parameter. Each `vars` item is tested with the `pathSegmentIsValid` function.
 
 ```typescript
 // E.g.:
 stores.$storeId.users.$userId_pathWithVars("abc", "DEADBEEF"); // Returns 'stores/abc/users/DEADBEEF
 ```
 
-</br>
+
+<br/>
 
 <b><h3> \_ref (...vars: string[]) => Reference </h3></b>
 
@@ -160,37 +172,39 @@ Returns a Realtime Database reference while using the same working of \_pathWith
 stores.$storeId.rating._ref("abc").set(2.7);
 ```
 
-</br>
+
+<br/>
 
 <b><h3> \_dbType : ModelLikeDbData </h3></b>
 
 Use it with Typescript `typeof` to get the ModelLikeDbData type of the node. Its value is undefined, so, only useful for getting the type.
 
-</br>
+<br/>
 
 <b><h3> \_dataToDb (data: ModelLikeDbData) => any </h3></b>
 
 Converts the inputted data to your database schema
 
-</br>
+<br/>
 
 <b><h3> \_dataFromDb (data: any) => ModelLikeDbData </h3></b>
 
 Converts data from the database (gotten with on() or once()) to a model-like object, with typing.
 
-</br>
+<br/>
 
 <b><h3> \_onceVal (event: EventType, ...vars: string[]) => ModelLikeDbData </h3></b>
 
 Same as model.\_dataFromDb(await model.\_ref(vars).once(event)).val().
 
-</br>
+<br/>
 
 <b><h3> \_onVal (event: EventType, callback: (data: ModelLikeDbData) => void, ...vars: string[]) => Reference </h3></b>
 
 Like Firebase ref.on(), it will call the callback for every time the event happens. But, this one will also call `model._dataFromDb(snapshot.val())` on the callback data.
 
-</br>
+
+<br/>
 
 <b><h3> \_exists (...vars: string[]): Promise\<boolean> </h3></b>
 
@@ -202,13 +216,15 @@ Same as (await model.\_ref(vars).once('value')).exists()
 await stores.$storeId.rating._exists(); // Will return true or false.
 ```
 
-</br>
+
+<br/>
 
 <b><h3> \_set (value: ModelLikeDbData, ...vars: string[]) => Promise\<any> </h3></b>
 
 Same as model.\_ref(vars).set(model._dataToDb(value)), with type checking on value.
 
-</br>
+
+<br/>
 
 <b><h3> \_update (value: Partial\<ModelLikeDbData>, ...vars: string[]) => Promise\<any> </h3></b>
 
@@ -216,7 +232,17 @@ Same as model.\_ref(vars).update(model._dataToDb(value)), with type checking on 
 
 As the value have a Partial<> wrapping the ModelLikeDbData, its root properties are optional.
 
-</br>
+
+<br/>
+
+<b><h3> \_push (value: Partial\<ModelLikeDbData>, ...vars: string[]) => Promise\<any> </h3></b>
+
+Same as model.\_ref(vars).push((model._dataToDb(value))), with type checking on value.
+
+With the same working of ref().push(), you may pass undefined as the `value` to just create the reference (to access the client side `key` property), without actually storing the new data. To learn more about it, Google it!
+
+
+<br/>
 
 <b><h3> \_clone \<T> (...vars: string[]) => T </h3></b>
 
