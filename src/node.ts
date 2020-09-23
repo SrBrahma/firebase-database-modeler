@@ -4,7 +4,7 @@ import {
 } from './functions';
 import { Reference, EventType } from '@firebase/database-types';
 import { ModelLikeDbData, Id } from './types';
-import { obj, getVarNodeChild } from './aux';
+import { obj, getVarNodeChild } from './utils';
 
 type IsChildVarNode<Child> = Child[keyof Child] extends SoftVarNode ? true : false;
 

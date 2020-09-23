@@ -1,6 +1,6 @@
 import { AnyNode } from './node';
 import { Reference, EventType, Database } from '@firebase/database-types';
-import { deepClone, isNode } from './aux';
+import { deepClone, isNode } from './utils';
 
 
 export let database: Database;
@@ -100,7 +100,6 @@ export function cloneModel<T extends AnyNode>(model: T, ...vars: string[]): T {
 }
 
 
-// Used on _make() property.
 // Gets a model-like object and makes it compatible with the db schema.
 // It's only a object as a parameter, because if you want to pass a boolean e.g., just use set().
 export function dataToDb(model: AnyNode, data: any): any {

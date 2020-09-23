@@ -13,6 +13,6 @@ export function finishModel<T>(model: T, initialPath = ''): T {
 
 export { _, _$ } from './node';
 export { modelerSetDatabase, pathSegmentIsValid } from './functions';
-export { mEmptyObj } from './aux';
+export { mEmptyObj } from './utils';
 
 export { Reference } from '@firebase/database-types';

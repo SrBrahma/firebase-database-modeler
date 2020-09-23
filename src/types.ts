@@ -1,4 +1,4 @@
-import { obj } from './aux';
+import { obj } from './utils';
 import { AllNodeKeys, SoftVarNode } from './node';
 
 // Use typeof in this to get the model property type if set (boolean, number, etc)
@@ -44,14 +44,14 @@ type NonFilledObjToAnyRecursively<T extends obj> =
 
 // Passes the type from _dbType to T.
 // We need to do this initial obj checking because _dbTypes may point to a type like number.
-type _typeToProp<T> = T extends _dbType<any>
+type _dbTypeToProp<T> = T extends _dbType<any>
   ? (
     T extends _dbType<obj>
-    ? { [K in keyof T]: _typeToProp<T[K]> }
+    ? { [K in keyof T]: _dbTypeToProp<T[K]> }
     : T['_dbType']// _dbType is a simple type
   )
   : (T extends obj
-    ? { [K in keyof T]: _typeToProp<T[K]> }
+    ? { [K in keyof T]: _dbTypeToProp<T[K]> }
     : T);//T; // Don't have a _dbType prop.
 
 // { [K in keyof T]: T[K] extends {_dbType: any}
@@ -84,8 +84,8 @@ export type ModelLikeDbData<T> =
   Id<
     // Remove meta keys
     NoMeta<
-      //     // Pass the type from _type to property
-      _typeToProp<
+      // Pass the type from _dbType to property
+      _dbTypeToProp<
         // Convert $variables: T into {[x: string]: T}
         applyVarNodeIfChild<T>
       >
