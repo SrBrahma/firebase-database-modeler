@@ -38,7 +38,9 @@ const stores = _('stores', {
     rating: _<number>('rating'),
     open: _<boolean>('open')
     users: _('users', {
-      $userId: _$<mEmptyObj>() // Realtime Database doesn't allow empty objects, so I standartized the 'empty object' as being {_: 0}.
+      $userId: _$({
+        name: _<string>('name')
+      })
     })
   })
 
@@ -49,20 +51,20 @@ const root = _('/', {
 // This must be called after setting your model at the root of your model.
 finishModel(root);
 
-stores._ref().push(
-  // Using _dataToDb function, we get Intellisense help to construct the object, and it also converts the model keys to the DB keys!
-  stores._dataToDb({
-    name: 'Cool Store',
-    rating: 4.2,
-    open: true,
-    users: {
-      [aUserId]: mEmptyObj; // Yes! It allows passing dynamic properties keys, and mEmptyObj is also a const besides a type.
-    }
-  })
-)
+const newStoreId = (await stores._push({
+  name: 'Cool Store',
+  rating: 4.2,
+  open: true,
+  users: {
+    [aUserId]: {
+      name: theUserName
+    };
+  }
+})).key! // ! because the type of Reference.key is string | null, but we know that in this case it is a string
 
-
-stores.$storeId.name._ref(aStoreId).set('New Name!')
+stores.$storeId.name._ref(newStoreId).set('New Name!') // Changes 'Cool Store' to 'New Name!'
+// Or also
+stores.$storeId.name._set('New Name!', newStoreId)
 ```
 
 # API
@@ -144,7 +146,7 @@ Returns the entire path (hierarchical concatenation of all keys). '\$' keys vari
 
 ```typescript
 // E.g.:
-stores.$storeId.name_path; // Returns 'stores/$/n'
+stores.$storeId.users.$usersId.name._path; // Returns 'stores/$/users/$/name'
 ```
 
 
@@ -158,6 +160,31 @@ its string value as parameter. Each `vars` item is tested with the `pathSegmentI
 ```typescript
 // E.g.:
 stores.$storeId.users.$userId_pathWithVars("abc", "DEADBEEF"); // Returns 'stores/abc/users/DEADBEEF
+```
+
+
+<br/>
+
+<b><h3> \_pathTo (targetNode: Node, ...vars: string[]) => string </h3></b>
+
+Returns the path from the current node to the given target node. If the target node is not a child of any level of the current node, an error is thrown. _pathWithVars(...vars) is executed. The current node key / segment isn't included in the result, but is the target node.
+
+This method is very useful to use in a update() function as the object key, as you can easily
+
+```typescript
+// E.g.:
+
+const m$storeId = stores.$storeId; // Just to reduce code size
+
+m$storeId._pathTo(m$storeId.users.$userId); // Returns 'users/$'
+
+m$storeId._pathTo(m$storeId.users.$userId, 'xyz'); // Returns 'users/xyz'
+
+// Example to show its functionality in update(). This example will change at the same time both users names.
+m$storeId._ref().update({
+  [m$storeId._pathTo(m$storeId.users.$userId.name, 'store1', 'user1')]: 'John',
+  [m$storeId._pathTo(m$storeId.users.$userId.name, 'store1', 'user2')]: 'Anna',
+})
 ```
 
 

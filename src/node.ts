@@ -1,6 +1,6 @@
 import {
   ref, cloneModel, dataToDb, dataFromDb, onceVal,
-  onVal, exists, pathWithVars, set, update, push, remove
+  onVal, exists, pathWithVars, set, update, push, remove, pathTo
 } from './functions';
 import { Reference, EventType } from '@firebase/database-types';
 import { ModelLikeDbData, Id } from './types';
@@ -16,7 +16,7 @@ type ThisNodeDbLikeData<ChildrenOrType, Key extends string> = ModelLikeDbData<No
 
 
 // TODO: its not allowing any as ChildrenOrType, to set it as _type. Maybe a third param? Maybe unknown would work
-export type Node<ChildrenOrType, Key extends string = string> = Id<Omit<{
+export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<Omit<{
 
   // test: ChildrenOrType;
 
@@ -31,6 +31,8 @@ export type Node<ChildrenOrType, Key extends string = string> = Id<Omit<{
   // Make sure you pass the same count of vars and $vars you have on the model path.
   readonly _pathWithVars: (...vars: string[]) => string;
   readonly _ref: (...vars: string[]) => Reference;
+
+  readonly _pathTo: (targetModel: Node, ...vars: string[]) => string;
 
   // Clones the model and applies the vars value to the paths.
   // Useful when you will use the model with vars for a good time,
@@ -64,9 +66,9 @@ export type Node<ChildrenOrType, Key extends string = string> = Id<Omit<{
 } & (ChildrenOrType extends obj ? ChildrenOrType : unknown),
   '_varNodeChild'>>; // We omit it, as isn't useful at all to the user, outside the implementation.
 
-// Node can be a VarNode or NoVarNode. A type of Node that any kind of Node extends it.
-export type AnyNode = Node<unknown, string>;
-
+// Comments below aren't used anymore. Will be removed soon
+// Node can be a VarNode or ~NoVarNode. A type of Node that any kind of Node extends it.
+// export type AnyNode = Node<unknown, string>;
 // Use this only if using AnyNode throws circular dependency. _key must have readonly
 // type SoftAnyNode = { readonly _key: string; };
 
@@ -95,6 +97,9 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
     },
     _ref(...vars: string[]): Reference {
       return ref(this, ...vars);
+    },
+    _pathTo(targetModel: Node, ...vars: string[]): string {
+      return pathTo(this, targetModel, ...vars);
     },
     _clone(...vars: string[]): Node<ChildrenOrType, Key> {
       return cloneModel(this, ...vars);

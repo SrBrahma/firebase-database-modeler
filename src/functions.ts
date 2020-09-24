@@ -1,4 +1,4 @@
-import { AnyNode } from './node';
+import { Node } from './node';
 import { Reference, EventType, Database } from '@firebase/database-types';
 import { deepClone, isNode } from './utils';
 
@@ -29,37 +29,60 @@ export function pathWithVars(path: string, ...vars: string[]) {
   return path.replace(allDolarRegex, () => {
     const val = vars[varsI++];
     if (!pathSegmentIsValid(val))
-      throw Error(`Firebase Database Modeler: vars[${varsI}] not set or has an invalid value (= ${val}).`
+      throw Error(`[firebase-database-modeler]: vars[${varsI}] not set or has an invalid value (= ${val}).`
         + ` vars = ${vars}. Regex valid pattern = ${validSegmentChars.source}`);
     return val;
   });
 }
 
-export function ref(model: AnyNode, ...vars: string[]): Reference {
+// Doesn't include the parentModel key / segment. Includes the target key / segment.
+// If there is a '/' in the beggining, it will be removed.
+export function pathTo(parentModel: Node, targetModel: Node, ...vars: string[]): string {
+  const targetStr = targetModel._path;
+  const initialStr = parentModel._path;
+
+  if (!targetStr.includes(initialStr))
+    throw Error(`[firebase-database-modeler]: Error in pathTo function. The target model is not a child of any level of the parent model`
+      + ` (= parent's path (${parentModel._path}) is not part of the target's path (${targetModel._path}))`);
+
+  let path = '';
+
+  if (!initialStr)
+    path = targetStr;
+  else
+    targetStr.replace(initialStr, '');
+
+  if (path[0] === '/')
+    path = path.replace('/', '');
+
+  return pathWithVars(path, ...vars);
+}
+
+export function ref(model: Node, ...vars: string[]): Reference {
   return database.ref(model._pathWithVars(...vars));
 }
 
-export async function exists(model: AnyNode, ...vars: string[]): Promise<boolean> {
+export async function exists(model: Node, ...vars: string[]): Promise<boolean> {
   return (await model._ref(...vars).once('value')).exists();
 }
 
-export async function onceVal<T extends AnyNode>(model: T, event: EventType, ...vars: string[]): Promise<any> {
+export async function onceVal<T extends Node>(model: T, event: EventType, ...vars: string[]): Promise<any> {
   const ref = model._ref(...vars);
   return model._dataFromDb((await ref.once(event)).val());
 }
 
 // Returns the reference, so you can easily unsubscribe when wanted with ref.off().
-export function onVal<T extends AnyNode>(model: T, event: EventType, callback: (val: any) => void, ...vars: string[]): Reference {
+export function onVal<T extends Node>(model: T, event: EventType, callback: (val: any) => void, ...vars: string[]): Reference {
   const ref = model._ref(...vars);
   ref.on(event, (snapshot: any) => callback(model._dataFromDb(snapshot.val())));
   return ref;
 }
 
-export async function set(model: AnyNode, value: any, ...vars: string[]): Promise<any> {
+export async function set(model: Node, value: any, ...vars: string[]): Promise<any> {
   return await model._ref(...vars).set(model._dataToDb(value));
 }
 
-export async function update(model: AnyNode, value: any, ...vars: string[]): Promise<any> {
+export async function update(model: Node, value: any, ...vars: string[]): Promise<any> {
   return await model._ref(...vars).update(model._dataToDb(value));
 }
 
@@ -67,11 +90,11 @@ export async function update(model: AnyNode, value: any, ...vars: string[]): Pro
 // https://stackoverflow.com/questions/38768576/in-firebase-when-using-push-how-do-i-get-the-unique-id-and-store-in-my-databas
 // https://stackoverflow.com/questions/50031142/firebase-push-promise-never-resolves
 // https://stackoverflow.com/a/49918443/10247962
-export async function push(model: AnyNode, value: any, ...vars: string[]): Promise<any> {
+export async function push(model: Node, value: any, ...vars: string[]): Promise<any> {
   return await model._ref(...vars).push(model._dataToDb(value));
 }
 
-export async function remove(model: AnyNode, ...vars: string[]): Promise<any> {
+export async function remove(model: Node, ...vars: string[]): Promise<any> {
   return await model._ref(...vars).remove();
 }
 
@@ -93,7 +116,7 @@ export function recursivePather(currentObj: any, parentPath: string, forcedPath?
 
 // Applies a variable to a model's path and return a cloned model with the new pathes.
 // ToDo: add it to Node as prop.
-export function cloneModel<T extends AnyNode>(model: T, ...vars: string[]): T {
+export function cloneModel<T extends Node>(model: T, ...vars: string[]): T {
   const clonedModel = deepClone(model);
   recursivePather(clonedModel, '', clonedModel._pathWithVars(...vars));
   return clonedModel;
@@ -102,7 +125,7 @@ export function cloneModel<T extends AnyNode>(model: T, ...vars: string[]): T {
 
 // Gets a model-like object and makes it compatible with the db schema.
 // It's only a object as a parameter, because if you want to pass a boolean e.g., just use set().
-export function dataToDb(model: AnyNode, data: any): any {
+export function dataToDb(model: Node, data: any): any {
   if (typeof data !== 'object' || data === null) // undefined will also be catch here
     return data;
 
@@ -134,7 +157,7 @@ export function dataToDb(model: AnyNode, data: any): any {
 
 // It is like the dataToDb() but somewhat the inverse of it.
 // TODO: Add addDataNotInModel to _onceVal and _onVal (overloading).
-export function dataFromDb<T extends AnyNode>(model: T, dbData: any, addDataNotInModel: boolean = true): any {
+export function dataFromDb<T extends Node>(model: T, dbData: any, addDataNotInModel: boolean = true): any {
 
   if (typeof dbData !== 'object' || dbData === null)
     return dbData;
@@ -154,8 +177,8 @@ export function dataFromDb<T extends AnyNode>(model: T, dbData: any, addDataNotI
     else {
       // TODO: Model could have a ommited prop that would hold children (maybe only _key?), for faster find()'ing
       const modelEntry = Object.entries(model)
-        .find(([, modelProp]) => isNode(modelProp) && (modelProp as AnyNode)._key === key
-        ) as [string, AnyNode] | undefined;
+        .find(([, modelProp]) => isNode(modelProp) && (modelProp as Node)._key === key
+        ) as [string, Node] | undefined;
 
       // We found the corresponding modelKey (modelEntry[0]).
       if (modelEntry)
