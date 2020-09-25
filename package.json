@@ -29,7 +29,8 @@
   },
   "homepage": "https://github.com/SrBrahma/Firebase-Database-Modeler#readme",
   "dependencies": {
-    "@firebase/database-types": "^0.5.2"
+    "@firebase/database-types": "^0.5.2",
+    "@firebase/logger": "^0.2.6"
   },
   "devDependencies": {
     "typescript": "^4.0.2"
