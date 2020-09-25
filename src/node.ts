@@ -32,7 +32,8 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<Omi
   readonly _pathWithVars: (...vars: string[]) => string;
   readonly _ref: (...vars: string[]) => Reference;
 
-  readonly _pathTo: (targetModel: Node, ...vars: string[]) => string;
+  // Using SoftAnyNode because Node wasn't working.
+  readonly _pathTo: (targetModel: SoftAnyNode, ...vars: string[]) => string;
 
   // Clones the model and applies the vars value to the paths.
   // Useful when you will use the model with vars for a good time,
@@ -70,7 +71,7 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<Omi
 // Node can be a VarNode or ~NoVarNode. A type of Node that any kind of Node extends it.
 // export type AnyNode = Node<unknown, string>;
 // Use this only if using AnyNode throws circular dependency. _key must have readonly
-// type SoftAnyNode = { readonly _key: string; };
+type SoftAnyNode = { readonly _key: string; };
 
 // This doesn't work for most cases, so we are using SoftVarNode for conditionals. 'unknown's fault?
 export type VarNode = Node<unknown, '$'>;
