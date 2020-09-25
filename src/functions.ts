@@ -1,17 +1,24 @@
 import { Node } from './node';
-import { Reference, EventType, Database } from '@firebase/database-types';
+import { Reference, EventType } from '@firebase/database-types';
 import { deepClone, isNode } from './utils';
 
+/** Cross-package Database type, to warn user if the given database argument is wrong. */
+export interface Database {
+  goOffline(): any;
+  goOnline(): any;
+  [extraProps: string]: any;
+}
 
-export let database: Database;
+export let defaultDatabase: Database | undefined;
 
 
 /**
  * You must call this with the return of your firebase.database().
- * @param {Database} databaseInstance
+ * The type is any
+ * @param {Database} database
  */
-export function modelerSetDatabase(databaseInstance: any) {
-  database = databaseInstance;
+export function modelerSetDefaultDatabase(database: Database) {
+  defaultDatabase = database;
 }
 
 
@@ -19,25 +26,26 @@ export function modelerSetDatabase(databaseInstance: any) {
 const allDolarRegex = new RegExp('\\$', 'g');
 const validSegmentChars = /^[a-zA-Z0-9_-]+$/; // Also tests for '' (empty string).
 
+
 export function pathSegmentIsValid(segment: string): boolean {
-  return ((typeof segment === 'string')
-    && (validSegmentChars.test(segment)));
+  return ((typeof segment === 'string') && validSegmentChars.test(segment));
 }
 
-export function pathWithVars(path: string, ...vars: string[]) {
+export function pathWithVars(path: string, vars?: string | string[]) {
   let varsI = 0;
   return path.replace(allDolarRegex, () => {
-    const val = vars[varsI++];
-    if (!pathSegmentIsValid(val))
+    const val = vars?.[varsI++]!; // If is undefined, pathSegmentIsValid will return false.
+    if (!pathSegmentIsValid(val as string))
       throw Error(`[firebase-database-modeler]: vars[${varsI}] not set or has an invalid value (= ${val}).`
         + ` vars = ${vars}. Regex valid pattern = ${validSegmentChars.source}`);
     return val;
   });
 }
 
-// Doesn't include the parentModel key / segment. Includes the target key / segment.
-// If there is a '/' in the beggining, it will be removed.
-export function pathTo(parentModel: Node, targetModel: Node, ...vars: string[]): string {
+/** Doesn't include the parentModel key / segment. Includes the target key / segment.
+ * If there is a '/' in the beggining, it will be removed.
+ */
+export function pathTo(parentModel: Node, targetModel: Node, vars?: string | string[]): string {
   const targetStr = targetModel._path;
   const initialStr = parentModel._path;
 
@@ -55,50 +63,57 @@ export function pathTo(parentModel: Node, targetModel: Node, ...vars: string[]):
   if (path[0] === '/')
     path = path.replace('/', '');
 
-  return pathWithVars(path, ...vars);
+  return pathWithVars(path, vars);
 }
 
-export function ref(model: Node, ...vars: string[]): Reference {
-  return database.ref(model._pathWithVars(...vars));
+export function ref(model: Node, vars?: string | string[], database?: Database): Reference {
+  if (database)
+    return database.ref(model._pathWithVars(vars));
+  if (defaultDatabase)
+    return defaultDatabase.ref(model._pathWithVars(vars));
+  else
+    throw new Error('[firebase-database-modeler]: Database instance is not set. Set it with modelerSetDefaultDatabase(database) or use the database parameter for DB-related methods.');
 }
 
-export async function exists(model: Node, ...vars: string[]): Promise<boolean> {
-  return (await model._ref(...vars).once('value')).exists();
+export async function exists(model: Node, vars?: string | string[], database?: Database): Promise<boolean> {
+  return (await model._ref(vars, database).once('value')).exists();
 }
 
-export async function onceVal<T extends Node>(model: T, event: EventType, ...vars: string[]): Promise<any> {
-  const ref = model._ref(...vars);
+export async function onceVal(model: Node, event: EventType = 'value', vars?: string | string[], database?: Database): Promise<any> {
+  const ref = model._ref(vars, database);
   return model._dataFromDb((await ref.once(event)).val());
 }
 
-// Returns the reference, so you can easily unsubscribe when wanted with ref.off().
-export function onVal<T extends Node>(model: T, event: EventType, callback: (val: any) => void, ...vars: string[]): Reference {
-  const ref = model._ref(...vars);
+/** Returns the reference, so you can easily unsubscribe with theReference.off(). */
+export function onVal(model: Node, event: EventType, callback: (val: any) => void, vars?: string | string[], database?: Database): Reference {
+  const ref = model._ref(vars, database);
   ref.on(event, (snapshot: any) => callback(model._dataFromDb(snapshot.val())));
   return ref;
 }
 
-export async function set(model: Node, value: any, ...vars: string[]): Promise<any> {
-  return await model._ref(...vars).set(model._dataToDb(value));
+export async function set(model: Node, value: any, vars?: string | string[], database?: Database): Promise<any> {
+  return await model._ref(vars, database).set(model._dataToDb(value));
 }
 
-export async function update(model: Node, value: any, ...vars: string[]): Promise<any> {
-  return await model._ref(...vars).update(model._dataToDb(value));
+export async function update(model: Node, value: any, vars?: string | string[], database?: Database): Promise<any> {
+  return await model._ref(vars, database).update(model._dataToDb(value));
 }
 
 // TODO: Improve it ?
 // https://stackoverflow.com/questions/38768576/in-firebase-when-using-push-how-do-i-get-the-unique-id-and-store-in-my-databas
 // https://stackoverflow.com/questions/50031142/firebase-push-promise-never-resolves
 // https://stackoverflow.com/a/49918443/10247962
-export async function push(model: Node, value: any, ...vars: string[]): Promise<any> {
-  return await model._ref(...vars).push(model._dataToDb(value));
+export async function push(model: Node, value: any, vars?: string | string[], database?: Database): Promise<any> {
+  return await model._ref(vars, database).push(model._dataToDb(value));
 }
 
-export async function remove(model: Node, ...vars: string[]): Promise<any> {
-  return await model._ref(...vars).remove();
+export async function remove(model: Node, vars?: string | string[], database?: Database): Promise<any> {
+  return await model._ref(vars, database).remove();
 }
 
-export function recursivePather(currentObj: any, parentPath: string, forcedPath?: string): void {
+
+
+export function recursivePather(currentObj: any, parentPath: string = '', forcedPath?: string): void {
   if (forcedPath !== undefined)
     currentObj._path = forcedPath;
   else if (!parentPath)
@@ -116,9 +131,9 @@ export function recursivePather(currentObj: any, parentPath: string, forcedPath?
 
 // Applies a variable to a model's path and return a cloned model with the new pathes.
 // ToDo: add it to Node as prop.
-export function cloneModel<T extends Node>(model: T, ...vars: string[]): T {
+export function cloneModel<T extends Node>(model: T, vars?: string | string[]): T {
   const clonedModel = deepClone(model);
-  recursivePather(clonedModel, '', clonedModel._pathWithVars(...vars));
+  recursivePather(clonedModel, '', clonedModel._pathWithVars(vars));
   return clonedModel;
 }
 

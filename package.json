@@ -1,14 +1,15 @@
 {
   "name": "firebase-database-modeler",
-  "version": "1.4.1",
+  "version": "2.0.0",
   "description": "Create and use Firebase Realtime Database models",
   "main": "lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy": "tsc -d && npm publish",
     "start": "npm run deploy",
-    "patch": "npm --no-git-tag-version version patch",
-    "minor": "npm --no-git-tag-version version minor"
+    "major": "npm --no-git-tag-version version major",
+    "minor": "npm --no-git-tag-version version minor",
+    "patch": "npm --no-git-tag-version version patch"
   },
   "repository": {
     "type": "git",
@@ -28,8 +29,7 @@
   },
   "homepage": "https://github.com/SrBrahma/Firebase-Database-Modeler#readme",
   "dependencies": {
-    "@firebase/database-types": "^0.5.2",
-    "@firebase/logger": "^0.2.6"
+    "@firebase/database-types": "^0.5.2"
   },
   "devDependencies": {
     "typescript": "^4.0.2"
