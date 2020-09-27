@@ -1,3 +1,7 @@
+# 2.1.0
+
+* Added `database` to the `_root()` and `._clone()` functions.
+
 # Major 2.0.0
 
 * Changed variadic `...vars: string[]` to `vars?: string | string[]`.

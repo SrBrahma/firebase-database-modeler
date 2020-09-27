@@ -1,6 +1,6 @@
 import {
   ref, cloneModel, dataToDb, dataFromDb, onceVal,
-  onVal, exists, pathWithVars, set, update, push, remove, pathTo, Database, recursivePather
+  onVal, exists, pathWithVars, set, update, push, remove, pathTo, Database, recursiveModelApplicator
 } from './functions';
 import { Reference, EventType } from '@firebase/database-types';
 import { ModelLikeDbData, Id } from './types';
@@ -18,26 +18,35 @@ type ThisNodeDbLikeData<ChildrenOrType, Key extends string> = ModelLikeDbData<No
 // TODO: its not allowing any as ChildrenOrType, to set it as _type. Maybe a third param? Maybe unknown would work
 export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<Omit<{
 
-  readonly _key: Key; // Pass '$' to define as VarNode
+  /** The key / segment of this Node.
+   *
+   * If it is a '`$`', it is a VarNode */
+  readonly _key: Key;
 
-  _path: string;
+  readonly _path: string;
 
-  // Points to the VarNode child, if this Node is a parent of one VarNode. Else, undefined.
-  // The type here is any because it doesn't matter, as it is omitted from the Node, being it useless to the final user.
-  // It is present here, however, to inform us that it actually exists in the Node object, and it is used.
+  /** Points to the database given by `_root(, database)` or by `._cloneModel(,, database)`
+   *
+  */
+  readonly _database: Database | undefined;
+
+  /** Points to the VarNode child, if this Node is a parent of one VarNode. Else, undefined.
+   *  The type here is any because it doesn't matter, as it is omitted from the Node, being it useless to the final user.
+   *  It is present here, however, to inform us that it actually exists in the Node object, and it is used.
+   */
   readonly _varNodeChild: any;
 
-  // Make sure you pass the same count of vars and $vars you have on the model path.
+  /** Make sure you pass the same count of vars and $vars you have on the model path. */
   readonly _pathWithVars: (vars?: string | string[]) => string;
 
-  // Using SoftAnyNode because Node wasn't working.
-  readonly _pathTo: (targetModel: SoftAnyNode, vars?: string | string[]) => string;
+  // Using SoftNode because Node wasn't working.
+  readonly _pathTo: (targetModel: SoftNode, vars?: string | string[]) => string;
 
-  // You enter the db-like fetched obj and it returns a model-like obj
+  /** Enter the DB-like object and it returns a model-like object. */
   readonly _dataFromDb: (data: any) => ThisNodeDbLikeData<ChildrenOrType, Key>;
 
-  // This makes ModelLikeDbData uses SoftAnyNode type, else would bug for some reason.
-  /** You enter the model-like object and it returns a DB-like object, ready to be uploaded. */
+  // This makes ModelLikeDbData uses SoftNode type, else would bug for some reason.
+  /** Enter the model-like object and it returns a DB-like object, ready to be uploaded. */
   readonly _dataToDb: (data: ThisNodeDbLikeData<ChildrenOrType, Key>) => any;
 
   // DB operations
@@ -77,7 +86,7 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<Omi
 // Node can be a VarNode or ~NoVarNode. A type of Node that any kind of Node extends it.
 // export type AnyNode = Node<unknown, string>;
 // Use this only if using AnyNode throws circular dependency. _key must have readonly
-type SoftAnyNode = { readonly _key: string; };
+export type SoftNode = { readonly _key: string; };
 
 // This doesn't work for most cases, so we are using SoftVarNode for conditionals. 'unknown's fault?
 export type VarNode = Node<unknown, '$'>;
@@ -99,6 +108,7 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
     _varNodeChild: getVarNodeChild(children),
     _key: key,
     _path: '', // Will be set later
+    _database: undefined, // Will be set later (or not)
     _pathWithVars(vars?: string | string[]): string {
       return pathWithVars(this._path, vars);
     },
@@ -150,20 +160,26 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
   // For some reason (complex af?) this type force is needed.
   // TODO: make it doesn't need this type force?
 
-  if (key === '/')
-    recursivePather(model);
-
   return model;
 }
 
 /** Creates a Variable Node */
 export function _$<ChildrenOrType>(children: ChildrenOrType = undefined as any as ChildrenOrType)
   : Node<ChildrenOrType, '$'> {
-  return _<ChildrenOrType, '$'>('$', children);
+  return _('$' as const, children);
 }
 
 /** Creates a Root Node. */
-export function _root<ChildrenOrType>(children: ChildrenOrType = undefined as any as ChildrenOrType)
+export function _root<ChildrenOrType>(children: ChildrenOrType = undefined as any as ChildrenOrType, database?: Database)
   : Node<ChildrenOrType, '/'> {
-  return _<ChildrenOrType, '/'>('/', children);
+  const model = _('/' as const, children) as any;
+  // Without as any, recursiveModelApplicator was throwing error.
+  // TODO: Fix? How?
+
+  recursiveModelApplicator(model, {
+    path: {},
+    database
+  });
+
+  return model;
 }

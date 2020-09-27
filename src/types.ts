@@ -65,7 +65,7 @@ type _dbTypeToProp<T> = T extends _dbType<any>
 // It turns all non VarNode props to never.
 // The [keyof T] makes the possible VarNode as the return, instead of returning it as a keyName: VarNode.
 // Also, if there isn't a VarNode (=all props are never), makes it returns never.
-// SoftVarNode because VarNode was not working with the SoftAnyNode below (why??)
+// SoftVarNode because VarNode was not working with the SoftNode below (why??)
 type getVarNodeChild<T> = { [K in keyof T]: T[K] extends SoftVarNode ? T[K] : never }[keyof T];
 
 // We use [P in string] instead of [$: string] or Record<string, ...>, because

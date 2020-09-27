@@ -1,6 +1,6 @@
 import { Node } from './node';
 import { Reference, EventType } from '@firebase/database-types';
-import { deepClone, isNode } from './utils';
+import { deepClone, isNode, isObject } from './utils';
 
 /** Cross-package Database type, to warn user if the given database argument is wrong. */
 export interface Database {
@@ -69,6 +69,8 @@ export function pathTo(parentModel: Node, targetModel: Node, vars?: string | str
 export function ref(model: Node, vars?: string | string[], database?: Database): Reference {
   if (database)
     return database.ref(model._pathWithVars(vars));
+  if (model._database)
+    return model._database.ref(model._pathWithVars(vars));
   if (defaultDatabase)
     return defaultDatabase.ref(model._pathWithVars(vars));
   else
@@ -112,42 +114,51 @@ export async function remove(model: Node, vars?: string | string[], database?: D
 }
 
 
-
-export function recursivePather(currentObj: any, parentPath: string = '', forcedPath?: string): void {
-  if (forcedPath !== undefined)
-    currentObj._path = forcedPath;
-  else if (!parentPath)
-    currentObj._path = currentObj._key;
-  else if (parentPath === '/')
-    currentObj._path += currentObj._key;
-  else
-    currentObj._path = parentPath + '/' + currentObj._key;
-
-  for (const child of Object.values(currentObj))
-    if (typeof child === 'object' && child !== null
-      && child.hasOwnProperty('_path'))
-      recursivePather(child, currentObj._path);
+interface recursiveModelApplicatorI {
+  /** If not passing parentPath or forcedPath, just pass an empty object. */
+  path?: {
+    parentPath?: string,
+    forcedPath?: string;
+  },
+  database?: Database;
 }
+export function recursiveModelApplicator<N extends Node<{}>>(model: N, { path, database }: recursiveModelApplicatorI): void {
+  // We use as any to override the readonly prop type. They are meant to be changed only here.
+  if (path) {
+    if (path.forcedPath !== undefined)
+      (model._path as any) = path.forcedPath;
+    else if (!path.parentPath)
+      (model._path as any) = model._key;
+    else if (path.parentPath === '/')
+      (model._path as any) += model._key;
+    else
+      (model._path as any) = path.parentPath + '/' + model._key;
+  }
 
-// Applies a variable to a model's path and return a cloned model with the new pathes.
-// ToDo: add it to Node as prop.
-export function cloneModel<T extends Node>(model: T, vars?: string | string[]): T {
-  const clonedModel = deepClone(model);
-  recursivePather(clonedModel, '', clonedModel._pathWithVars(vars));
-  return clonedModel;
+  if (database)
+    (model._database as any) = database;
+
+  for (const child of Object.values(model))
+    if (typeof child === 'object' && child !== null
+      && isNode(child)) {
+      recursiveModelApplicator(child, {
+        ...(path && { path: { parentPath: model._path } }),
+        ...(database && { database: database })
+      });
+    }
 }
 
 
 // Gets a model-like object and makes it compatible with the db schema.
-// It's only a object as a parameter, because if you want to pass a boolean e.g., just use set().
-export function dataToDb(model: Node, data: any): any {
-  if (typeof data !== 'object' || data === null) // undefined will also be catch here
+export function dataToDb<N extends Node>(model: N, data: any): any {
+  // If data isn't a object (aka no need to translate keys), return it.
+  if (!isObject(data))
     return data;
 
   const newObj: any = {};
 
   // Cycle throught all current children
-  for (const [key, value] of Object.entries(data) as [string, any][]) {
+  for (const [key, value] of Object.entries(data)) {
 
     // Points to the varNodeChild, if there is one.
     // As any as _varNodeChild is ommited from Node type
@@ -172,15 +183,15 @@ export function dataToDb(model: Node, data: any): any {
 
 // It is like the dataToDb() but somewhat the inverse of it.
 // TODO: Add addDataNotInModel to _onceVal and _onVal (overloading).
-export function dataFromDb<T extends Node>(model: T, dbData: any, addDataNotInModel: boolean = true): any {
-
-  if (typeof dbData !== 'object' || dbData === null)
+export function dataFromDb<N extends Node>(model: N, dbData: any, addDataNotInModel: boolean = true): any {
+  // If data isn't a object (aka no need to translate keys), return it.
+  if (!isObject(dbData))
     return dbData;
 
   const newObj: any = {};
 
   // Cycle throught all current children
-  for (const [key, value] of Object.entries(dbData) as [string, any][]) {
+  for (const [key, value] of Object.entries(dbData)) {
 
     // Points to the varNodeChild, if there is one.
     // As any as _varNodeChild is ommited from Node type
@@ -192,7 +203,7 @@ export function dataFromDb<T extends Node>(model: T, dbData: any, addDataNotInMo
     else {
       // TODO: Model could have a ommited prop that would hold children (maybe only _key?), for faster find()'ing
       const modelEntry = Object.entries(model)
-        .find(([, modelProp]) => isNode(modelProp) && (modelProp as Node)._key === key
+        .find(([, modelProp]) => isNode(modelProp) && modelProp._key === key
         ) as [string, Node] | undefined;
 
       // We found the corresponding modelKey (modelEntry[0]).
@@ -205,4 +216,19 @@ export function dataFromDb<T extends Node>(model: T, dbData: any, addDataNotInMo
     }
   }
   return newObj;
+}
+
+
+
+// Applies a variable to a model's path and return a cloned model with the new pathes.
+// ToDo: add it to Node as prop.
+export function cloneModel<N extends Node>(model: N, vars?: string | string[], database?: Database): N {
+  const clonedModel = deepClone(model);
+  recursiveModelApplicator(clonedModel, {
+    path: {
+      forcedPath: clonedModel._pathWithVars(vars)
+    },
+    database
+  });
+  return clonedModel;
 }

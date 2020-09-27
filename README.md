@@ -36,7 +36,7 @@ import { _, _$, _root, modelerSetDefaultDatabase } from 'firebase-database-model
 // Read their docs to see how to get the firebase.database().
 const database = firebase.database()
 
-modelerSetDefaultDatabase(database)
+modelerSetDefaultDatabase(database);
 
 const stores = _('stores', {
   $storeId: _$({
@@ -93,7 +93,16 @@ async function getStore(storeId: string) {
 
 <br/>
 
-<b><h3> \_(key: string, children?: Node) : Node </h3></b>
+<b><h3> modelerSetDefaultDatabase (database: Database) => void</h3></b>
+
+Sets the default database that will be used by all Realtime Database operations you may call using your Model.
+
+You do not need to use this if you are passing the database to the `_root()` or `._ref()` based functions.
+
+
+<br/>
+
+<b><h3> \_ (key: string, children?: Node) => Node </h3></b>
 
 Creates a Node. First parameter is the Node key: the name of it in the database.
 
@@ -115,7 +124,7 @@ database.second.nested._key(); // = 'stuff'
 
 <br/>
 
-<b><h3> \_\$(key: string, children?: Node) : Node </h3></b>
+<b><h3> \_\$ (key: string, children?: Node) => Node </h3></b>
 
 Creates a Variable Node. It's the same as calling `_('$', children)`.
 
@@ -131,9 +140,11 @@ const users = _('users', {
 
 <br/>
 
-<b><h3> \_\/(key: string, children?: Node) : Node </h3></b>
+<b><h3> \_root (key: string, children?: Node, database?: Database) => Node </h3></b>
 
-Creates a Root Node. You MUST call this to your Model root to make everything work. It's the same as calling `_('/', children)`.
+Creates a Root Node. You MUST call this to your Model root to make everything work.
+
+If you use the `database` parameter, it will apply it recursively to all Model Nodes (to the ._database property), having preference over the database that can be set with the `modelerSetDefaultDatabase()`
 
 ```typescript
 const root = _root({
@@ -144,7 +155,7 @@ const root = _root({
 ```
 
 
-<b><h3> pathSegmentIsValid(segment: string) : boolean </h3></b>
+<b><h3> pathSegmentIsValid (segment: string) => boolean </h3></b>
 
 A path segment is 'each/part/of/a/path', separated by '/'. This function checks if the given segment is a string, and if matches the RegEx `/^[a-zA-Z0-9_-]+$/` . Useful to check if the client/server is using a valid and safe path.
 
@@ -240,7 +251,9 @@ You probably won't use this property directly.
 
 Returns a Realtime Database reference while using the same working of \_pathWithVars.
 
-If you are using more than one Realtime Database instances in your project, you may pass it as argument.
+You may pass a database as argument. It has preference over the database set by `modelerSetDefaultDatabase()` or by the `_root()` or `._clone()` database argument.
+
+It is called by all the DB operations methods that will soon appear below.
 
 The `vars` and `database` parameters will appear in another functions, with the same functionality.
 
@@ -314,7 +327,7 @@ As the value have a Partial<> wrapping the ModelLikeDbData, its root properties 
 
 <br/>
 
-<b><h3> \._push (value: \<ModelLikeDbData>, vars?: string | string[], database?: Database) => Promise\<any> </h3></b>
+<b><h3> \._push (value: ModelLikeDbData, vars?: string | string[], database?: Database) => Promise\<any> </h3></b>
 
 Same as `model._ref(vars).push((model._dataToDb(value)))`, with type checking on value.
 
@@ -341,10 +354,23 @@ stores.$storeId.name._ref(newStoreId).set('New Name!') // Changes 'Cool Store' t
 
 <br/>
 
-<b><h3> \._clone \<T> (vars?: string | string[]) => T </h3></b>
+<b><h3> \._clone (vars?: string | string[], database?: Database) => Node </h3></b>
 
-Deep clones the Node applying vars to the '\$' keys to the new cloned model ._path. Useful for not having to pass the vars all the time to a Model that you will use for a while, like having it in a Class.
+Deep clones the Model Node applying vars to the '\$' keys to the new cloned model ._path. Useful for not having to pass the vars all the time to a Model that you will use for a while, like having it in a Class.
 
+You can also pass the database as argument, that will work in the same way as the `_root()` database parameter to the new cloned model.
+
+<br/>
+
+<b><h3>
+._database : Database | undefined
+</h3></b>
+
+If you passed the database argument in `_root()` or in `_clone()`, it will be set in this property.
+
+It has preference over the `modelerSetDefaultDatabase()`, but not over the database passed to `._ref()` based functions.
+
+You probably won't have to use this.
 
 <br/>
 <br/>
@@ -358,6 +384,8 @@ Deep clones the Node applying vars to the '\$' keys to the new cloned model ._pa
 - Firestore support. Easy to add, but I don't think I will ever use Firestore again (its max 1 write per second is a big limitation).
 
 - Code tests
+
+- Check if there is a child with the same DB key
 
 - Improve this README
 

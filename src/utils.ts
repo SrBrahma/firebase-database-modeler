@@ -1,4 +1,4 @@
-import { VarNode } from './node';
+import { VarNode, Node } from './node';
 
 
 // https://stackoverflow.com/a/34624648/10247962
@@ -16,7 +16,7 @@ export type obj = Record<string, unknown>;
 
 
 // Returns if data is a non-null object
-export function isObject(data: any) {
+export function isObject(data: any): data is obj {
   return typeof data === 'object' && data !== null;
 }
 
@@ -29,7 +29,7 @@ export type mEmptyObj = typeof mEmptyObj;
 
 
 // Checks if the given argument is a Node. Can be a VarNode.
-export function isNode(data: any): boolean {
+export function isNode(data: any): data is Node {
   return isObject(data) && data.hasOwnProperty('_key');
 }
 
