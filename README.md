@@ -389,6 +389,10 @@ You probably won't have to use this.
 
 - Improve this README
 
+- Typescript sourcery to know how many `vars` are needed for current node DB op
+
+- ._updateChild() will from the given object construct the key / path and only update the given child.
+
 
 <br/>
 

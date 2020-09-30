@@ -1,3 +1,7 @@
+# 2.1.1
+
+* Fixed `._push()` not allowing no args
+
 # 2.1.0
 
 * Added `database` to the `_root()` and `._clone()` functions.

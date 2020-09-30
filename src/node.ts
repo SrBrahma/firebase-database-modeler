@@ -63,9 +63,9 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<Omi
   readonly _update: (value: Partial<ThisNodeDbLikeData<ChildrenOrType, Key>>, vars?: string | string[], database?: Database) => Promise<any>;
 
   // TODO: improve _push rtn type? Generic conditional for ValType === undefined ? Reference : Promise<Reference> ?
-  readonly _push: (value: undefined | (IsChildVarNode<ChildrenOrType> extends true
+  readonly _push: (value?: IsChildVarNode<ChildrenOrType> extends true
     ? ModelLikeDbData<ChildrenOrType[keyof ChildrenOrType]>
-    : ThisNodeDbLikeData<ChildrenOrType, Key>), vars?: string | string[], database?: Database) => Reference;
+    : ThisNodeDbLikeData<ChildrenOrType, Key>, vars?: string | string[], database?: Database) => Reference;
 
   readonly _remove: (vars?: string | string[], database?: Database) => Promise<any>;
 
@@ -143,7 +143,7 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
       return update(this, value, vars, database);
     },
     // _push value type is set in the Node type. A little complex to be here.
-    _push(value: any, vars?: string | string[], database?: Database) {
+    _push(value?: any, vars?: string | string[], database?: Database) {
       return push(this, value, vars, database);
     },
     _remove(vars?: string | string[], database?: Database) {

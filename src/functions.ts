@@ -105,7 +105,9 @@ export async function update(model: Node, value: any, vars?: string | string[], 
 // https://stackoverflow.com/questions/38768576/in-firebase-when-using-push-how-do-i-get-the-unique-id-and-store-in-my-databas
 // https://stackoverflow.com/questions/50031142/firebase-push-promise-never-resolves
 // https://stackoverflow.com/a/49918443/10247962
-export async function push(model: Node, value: any, vars?: string | string[], database?: Database): Promise<any> {
+export async function push(model: Node, value?: any, vars?: string | string[], database?: Database): Promise<any> {
+  if (!value)
+    return model._ref(vars, database).push();
   return await model._ref(vars, database).push(model._dataToDb(value));
 }
 

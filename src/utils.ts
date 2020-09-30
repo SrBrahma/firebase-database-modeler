@@ -13,8 +13,6 @@ export function deepClone<T>(originalObj: T): T {
 
 export type obj = Record<string, unknown>;
 
-
-
 // Returns if data is a non-null object
 export function isObject(data: any): data is obj {
   return typeof data === 'object' && data !== null;

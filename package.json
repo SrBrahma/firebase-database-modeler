@@ -1,6 +1,6 @@
 {
   "name": "firebase-database-modeler",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Create and use Firebase Realtime Database models",
   "main": "lib/index.js",
   "scripts": {
@@ -9,7 +9,8 @@
     "start": "npm run deploy",
     "major": "npm --no-git-tag-version version major",
     "minor": "npm --no-git-tag-version version minor",
-    "patch": "npm --no-git-tag-version version patch"
+    "patch": "npm --no-git-tag-version version patch",
+    "quickPatch": "npm run patch && npm run deploy"
   },
   "repository": {
     "type": "git",
