@@ -63,9 +63,9 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<Omi
   readonly _update: (value: Partial<ThisNodeDbLikeData<ChildrenOrType, Key>>, vars?: string | string[], database?: Database) => Promise<any>;
 
   // TODO: improve _push rtn type? Generic conditional for ValType === undefined ? Reference : Promise<Reference> ?
-  readonly _push: (value?: IsChildVarNode<ChildrenOrType> extends true
+  readonly _push: <T extends (IsChildVarNode<ChildrenOrType> extends true
     ? ModelLikeDbData<ChildrenOrType[keyof ChildrenOrType]>
-    : ThisNodeDbLikeData<ChildrenOrType, Key>, vars?: string | string[], database?: Database) => Reference;
+    : ThisNodeDbLikeData<ChildrenOrType, Key>) >(value?: T, vars?: string | string[], database?: Database) => T extends undefined ? Reference : Promise<Reference>;
 
   readonly _remove: (vars?: string | string[], database?: Database) => Promise<any>;
 
