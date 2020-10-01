@@ -65,7 +65,7 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<Omi
   // TODO: improve _push rtn type? Generic conditional for ValType === undefined ? Reference : Promise<Reference> ?
   readonly _push: <T extends (IsChildVarNode<ChildrenOrType> extends true
     ? ModelLikeDbData<ChildrenOrType[keyof ChildrenOrType]>
-    : ThisNodeDbLikeData<ChildrenOrType, Key>) >(value?: T, vars?: string | string[], database?: Database) => T extends undefined ? Reference : Promise<Reference>;
+    : ThisNodeDbLikeData<ChildrenOrType, Key>) >(value?: T, vars?: string | string[], database?: Database) => Reference & Promise<Reference>;
 
   readonly _remove: (vars?: string | string[], database?: Database) => Promise<any>;
 
