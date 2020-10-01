@@ -1,8 +1,18 @@
-# 2.1.1
+## 2.2.0
+
+Added `blockDatabase` parameter to the `_root` and `._clone` functions.
+
+Also added `._blockDatabase` property which reflexes the parameter above.
+
+Fixed `._clone` not using the `database` parameter.
+
+### 2.1.x
 
 * Fixed `._push()` not allowing no args
 
-# 2.1.0
+* Fixed `._push()` return
+
+## 2.1.0
 
 * Added `database` to the `_root()` and `._clone()` functions.
 

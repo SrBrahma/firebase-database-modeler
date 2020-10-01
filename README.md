@@ -140,11 +140,13 @@ const users = _('users', {
 
 <br/>
 
-<b><h3> \_root (key: string, children?: Node, database?: Database) => Node </h3></b>
+<b><h3> \_root (key: string, children?: Node, database?: Database, blockDatabase: boolean = false) => Node </h3></b>
 
 Creates a Root Node. You MUST call this to your Model root to make everything work.
 
-If you use the `database` parameter, it will apply it recursively to all Model Nodes (to the ._database property), having preference over the database that can be set with the `modelerSetDefaultDatabase()`
+If you use the `database` parameter, it will apply it recursively to all Model Nodes (to the ._database property), having preference over the database that can be set with the `modelerSetDefaultDatabase()` but can be overriden by the `database` parameter in `._ref()` based functions.
+
+If `blockDatabase == true`, an Error will be throw if used the `database` parameter in `._ref()` based functions. This is useful and safe if using more than one Model and one of them uses the `database` parameter in `._ref` and the other doesn't, so, you won't mess your DB by a mistake.
 
 ```typescript
 const root = _root({
@@ -251,11 +253,12 @@ You probably won't use this property directly.
 
 Returns a Realtime Database reference while using the same working of \_pathWithVars.
 
-You may pass a database as argument. It has preference over the database set by `modelerSetDefaultDatabase()` or by the `_root()` or `._clone()` database argument.
+You may pass a database as argument. It has preference over the database set by `modelerSetDefaultDatabase()` or by the `_root()` or `._clone()` database argument. (Read in `_root` about `blockDatabase`.)
 
 It is called by all the DB operations methods that will soon appear below.
 
 The `vars` and `database` parameters will appear in another functions, with the same functionality.
+
 
 ```typescript
 // E.g.:
@@ -354,11 +357,11 @@ stores.$storeId.name._ref(newStoreId).set('New Name!') // Changes 'Cool Store' t
 
 <br/>
 
-<b><h3> \._clone (vars?: string | string[], database?: Database) => Node </h3></b>
+<b><h3> \._clone (vars?: string | string[], database?: Database, blockDatabase: boolean = false) => Node </h3></b>
 
-Deep clones the Model Node applying vars to the '\$' keys to the new cloned model ._path. Useful for not having to pass the vars all the time to a Model that you will use for a while, like having it in a Class.
+Deep clones the Model Node applying `vars` to the '`\$`' keys to the new cloned model `._path`. Useful for not having to pass the `vars` all the time to a Model that you will use for a while, like having it in a Class.
 
-You can also pass the database as argument, that will work in the same way as the `_root()` database parameter to the new cloned model.
+`database` and `blockDatabase` works as the same `_root` parameters.
 
 <br/>
 
@@ -366,13 +369,23 @@ You can also pass the database as argument, that will work in the same way as th
 ._database : Database | undefined
 </h3></b>
 
-If you passed the database argument in `_root()` or in `_clone()`, it will be set in this property.
+If you passed the `database` argument in `_root()` or in `_clone()`, it will be set in this property.
 
-It has preference over the `modelerSetDefaultDatabase()`, but not over the database passed to `._ref()` based functions.
+You probably won't have to use this.
+
+
+<br/>
+
+<b><h3>
+._blockDatabase : boolean
+</h3></b>
+
+If you passed the `blockDatabase` argument in `_root()` or in `_clone()`, it will be set in this property.
 
 You probably won't have to use this.
 
 <br/>
+
 <br/>
 
 # Roadmap

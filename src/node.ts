@@ -1,8 +1,8 @@
+import type { Reference, EventType } from '@firebase/database-types';
 import {
   ref, cloneModel, dataToDb, dataFromDb, onceVal,
   onVal, exists, pathWithVars, set, update, push, remove, pathTo, Database, recursiveModelApplicator
 } from './functions';
-import { Reference, EventType } from '@firebase/database-types';
 import { ModelLikeDbData, Id } from './types';
 import { obj, getVarNodeChild } from './utils';
 
@@ -18,22 +18,30 @@ type ThisNodeDbLikeData<ChildrenOrType, Key extends string> = ModelLikeDbData<No
 // TODO: its not allowing any as ChildrenOrType, to set it as _type. Maybe a third param? Maybe unknown would work
 export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<Omit<{
 
-  /** The key / segment of this Node.
-   *
-   * If it is a '`$`', it is a VarNode */
+  /**
+   * The key / segment of this Node.
+   * If it is a '`$`', it is a VarNode
+   * */
   readonly _key: Key;
 
   readonly _path: string;
 
-  /** Points to the database given by `_root(, database)` or by `._cloneModel(,, database)`
-   *
-  */
+  /**
+   * Points to the database given by `_root(, database)` or by `._cloneModel(,, database)`
+   * */
   readonly _database: Database | undefined;
 
-  /** Points to the VarNode child, if this Node is a parent of one VarNode. Else, undefined.
-   *  The type here is any because it doesn't matter, as it is omitted from the Node, being it useless to the final user.
-   *  It is present here, however, to inform us that it actually exists in the Node object, and it is used.
-   */
+  /**
+   * Will throw an error if passed an database argument to ._ref() based functions.
+   * Useful if using with more than one model and one of those uses this database argument.
+   * */
+  readonly _blockDatabase: boolean;
+
+  /**
+   * Points to the VarNode child, if this Node is a parent of one VarNode. Else, undefined.
+   * The type here is any because it doesn't matter, as it is omitted from the Node, being it useless to the final user.
+   * It is present here, however, to inform us that it actually exists in the Node object, and it is used.
+   * */
   readonly _varNodeChild: any;
 
   /** Make sure you pass the same count of vars and $vars you have on the model path. */
@@ -71,10 +79,12 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<Omi
 
   // End of DB operations
 
-  // Clones the model and applies the vars value to the paths.
-  // Useful when you will use the model with vars for a good time,
-  // so you don't have to keep passing the vars all the time.
-  readonly _clone: (vars?: string | string[]) => Node<ChildrenOrType, Key>;
+  /**
+   * Clones the model and applies the vars value to the paths.
+   * Useful when you will use the model with vars for a good time,
+   * so you don't have to keep passing the vars all the time.
+   * */
+  readonly _clone: (vars?: string | string[], database?: Database, blockDatabase?: boolean) => Node<ChildrenOrType, Key>;
 
 
   readonly _dbType: ModelLikeDbData<ChildrenOrType>; // We don't pass the Node here because it would throw a circular dep
@@ -109,6 +119,7 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
     _key: key,
     _path: '', // Will be set later
     _database: undefined, // Will be set later (or not)
+    _blockDatabase: false, // Will be set later (or not)
     _pathWithVars(vars?: string | string[]): string {
       return pathWithVars(this._path, vars);
     },
@@ -150,8 +161,8 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
       return remove(this, vars, database);
     },
 
-    _clone(vars?: string | string[]): Node<ChildrenOrType, Key> {
-      return cloneModel(this, vars);
+    _clone(vars?: string | string[], database?: Database, blockDatabase: boolean = false): Node<ChildrenOrType, Key> {
+      return cloneModel(this, vars, database, blockDatabase);
     },
 
     _dbType: undefined,
@@ -169,8 +180,14 @@ export function _$<ChildrenOrType>(children: ChildrenOrType = undefined as any a
   return _('$' as const, children);
 }
 
-/** Creates a Root Node. */
-export function _root<ChildrenOrType>(children: ChildrenOrType = undefined as any as ChildrenOrType, database?: Database)
+/**
+ * Creates a Root Node.
+ *
+ * If `blockDatabase`, will throw an error if passed an database argument to ._ref() based functions.
+ * Useful if using with more than one model and one of those uses the database argument.
+ * */
+export function _root<ChildrenOrType>(children: ChildrenOrType = undefined as any as ChildrenOrType,
+  database?: Database, blockDatabase: boolean = false)
   : Node<ChildrenOrType, '/'> {
   const model = _('/' as const, children) as any;
   // Without as any, recursiveModelApplicator was throwing error.
@@ -178,7 +195,8 @@ export function _root<ChildrenOrType>(children: ChildrenOrType = undefined as an
 
   recursiveModelApplicator(model, {
     path: {},
-    database
+    database,
+    blockDatabase
   });
 
   return model;

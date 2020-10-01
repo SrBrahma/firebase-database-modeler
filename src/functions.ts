@@ -1,5 +1,5 @@
+import type { Reference, EventType } from '@firebase/database-types';
 import { Node } from './node';
-import { Reference, EventType } from '@firebase/database-types';
 import { deepClone, isNode, isObject } from './utils';
 
 /** Cross-package Database type, to warn user if the given database argument is wrong. */
@@ -67,8 +67,12 @@ export function pathTo(parentModel: Node, targetModel: Node, vars?: string | str
 }
 
 export function ref(model: Node, vars?: string | string[], database?: Database): Reference {
-  if (database)
+  if (database) {
+    if (model._blockDatabase)
+      throw new Error('[firebase-database-modeler]: An database argument has been passed but the blockDatabase was set in _root or _clone function. ._path of this model: ' +
+        model._path);
     return database.ref(model._pathWithVars(vars));
+  }
   if (model._database)
     return model._database.ref(model._pathWithVars(vars));
   if (defaultDatabase)
@@ -115,40 +119,6 @@ export async function remove(model: Node, vars?: string | string[], database?: D
   return await model._ref(vars, database).remove();
 }
 
-
-interface recursiveModelApplicatorI {
-  /** If not passing parentPath or forcedPath, just pass an empty object. */
-  path?: {
-    parentPath?: string,
-    forcedPath?: string;
-  },
-  database?: Database;
-}
-export function recursiveModelApplicator<N extends Node<{}>>(model: N, { path, database }: recursiveModelApplicatorI): void {
-  // We use as any to override the readonly prop type. They are meant to be changed only here.
-  if (path) {
-    if (path.forcedPath !== undefined)
-      (model._path as any) = path.forcedPath;
-    else if (!path.parentPath)
-      (model._path as any) = model._key;
-    else if (path.parentPath === '/')
-      (model._path as any) += model._key;
-    else
-      (model._path as any) = path.parentPath + '/' + model._key;
-  }
-
-  if (database)
-    (model._database as any) = database;
-
-  for (const child of Object.values(model))
-    if (typeof child === 'object' && child !== null
-      && isNode(child)) {
-      recursiveModelApplicator(child, {
-        ...(path && { path: { parentPath: model._path } }),
-        ...(database && { database: database })
-      });
-    }
-}
 
 
 // Gets a model-like object and makes it compatible with the db schema.
@@ -224,13 +194,61 @@ export function dataFromDb<N extends Node>(model: N, dbData: any, addDataNotInMo
 
 // Applies a variable to a model's path and return a cloned model with the new pathes.
 // ToDo: add it to Node as prop.
-export function cloneModel<N extends Node>(model: N, vars?: string | string[], database?: Database): N {
+export function cloneModel<N extends Node>(model: N, vars: string | string[] | undefined,
+  database: Database | undefined, blockDatabase: boolean | undefined): N {
+
   const clonedModel = deepClone(model);
   recursiveModelApplicator(clonedModel, {
-    path: {
-      forcedPath: clonedModel._pathWithVars(vars)
+    ...(vars) && {
+      path: {
+        forcedPath: clonedModel._pathWithVars(vars)
+      }
     },
-    database
+    database,
+    blockDatabase
   });
   return clonedModel;
+}
+
+
+
+interface recursiveModelApplicatorI {
+  /** If not passing parentPath or forcedPath, just pass an empty object. */
+  path?: {
+    parentPath?: string,
+    forcedPath?: string;
+  },
+  database?: Database;
+  blockDatabase?: boolean;
+}
+export function recursiveModelApplicator<N extends Node<{}>>(
+  model: N, { path, database, blockDatabase }: recursiveModelApplicatorI): void {
+
+  // We use as any to override the readonly prop type. They are meant to be changed only here.
+  if (path) {
+    if (path.forcedPath !== undefined)
+      (model._path as any) = path.forcedPath;
+    else if (!path.parentPath)
+      (model._path as any) = model._key;
+    else if (path.parentPath === '/')
+      (model._path as any) += model._key;
+    else
+      (model._path as any) = path.parentPath + '/' + model._key;
+  }
+
+  if (database)
+    (model._database as any) = database;
+
+  if (blockDatabase)
+    (model._blockDatabase as any) = blockDatabase;
+
+  for (const child of Object.values(model))
+    if (typeof child === 'object' && child !== null
+      && isNode(child)) {
+      recursiveModelApplicator(child, {
+        ...(path && { path: { parentPath: model._path } }),
+        ...(database && { database }),
+        ...(blockDatabase && { blockDatabase })
+      });
+    }
 }
