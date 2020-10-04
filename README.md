@@ -202,6 +202,8 @@ stores.$storeId.users.$userId.name._path; // Returns 'stores/$/users/$/name'
 Returns the path with **'\$'** variables converted. For each Variable Node, you must pass
 its string value as parameter. Each `vars` item is tested with the `pathSegmentIsValid` function.
 
+If you passed a number of variables lesser than the required or any of them have an invalid value (not a string or the string doesn't match the Regex `/^[a-zA-Z0-9_-]+$/`), an error with useful information will be throw. This will also happen in any other function here that calls uses this one.
+
 ```typescript
 // E.g.:
 stores.$storeId.users.$userId_pathWithVars(['abc', '0xDEADBEEF']); // Returns 'stores/abc/users/0xDEADBEEF

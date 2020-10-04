@@ -32,6 +32,8 @@ export function pathSegmentIsValid(segment: string): boolean {
 }
 
 export function pathWithVars(path: string, vars?: string | string[]) {
+  if (vars && !Array.isArray(vars))
+    vars = [vars];
   let varsI = 0;
   return path.replace(allDolarRegex, () => {
     const val = vars?.[varsI++]!; // If is undefined, pathSegmentIsValid will return false.

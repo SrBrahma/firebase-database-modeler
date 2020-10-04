@@ -1,3 +1,7 @@
+### 2.2.2
+
+Fixed `._pathWithVars()`-like functions not working with string (not string[]) var.
+
 ### 2.2.1
 
 Improved invalid `vars` in `._ref()`-like functions. It now also shows the non parsed path.
