@@ -1,3 +1,7 @@
+### 2.2.1
+
+Improved invalid `vars` in `._ref()`-like functions. It now also shows the non parsed path.
+
 ## 2.2.0
 
 Added `blockDatabase` parameter to the `_root` and `._clone` functions.

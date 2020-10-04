@@ -390,7 +390,7 @@ You probably won't have to use this.
 
 # Roadmap
 
-- Optional properties.
+- Optional properties. For now, you may use the type null and pass a null value. For VarNodes, you may pass an empty object.
 
 - Optional database key; it would use the property key as the database key, getting them on finishModel().
 
@@ -406,6 +406,9 @@ You probably won't have to use this.
 
 - ._updateChild() will from the given object construct the key / path and only update the given child.
 
+- If blockDatabase == true, hide `database` property from `._ref()` based functions.
+
+- ._onceVal() overload with implicit 'value'.
 
 <br/>
 

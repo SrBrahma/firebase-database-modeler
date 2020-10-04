@@ -37,7 +37,7 @@ export function pathWithVars(path: string, vars?: string | string[]) {
     const val = vars?.[varsI++]!; // If is undefined, pathSegmentIsValid will return false.
     if (!pathSegmentIsValid(val as string))
       throw Error(`[firebase-database-modeler]: vars[${varsI}] not set or has an invalid value (= ${val}).`
-        + ` vars = ${vars}. Regex valid pattern = ${validSegmentChars.source}`);
+        + `path = ${path}. vars = ${vars}. Regex valid pattern = ${validSegmentChars.source}`);
     return val;
   });
 }
