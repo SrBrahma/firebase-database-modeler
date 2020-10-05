@@ -4,7 +4,7 @@ import {
   onVal, exists, pathWithVars, set, update, push, remove, pathTo, Database, recursiveModelApplicator
 } from './functions';
 import { ModelLikeDbData, Id } from './types';
-import { obj, getVarNodeChild } from './utils';
+import { getVarNodeChildKey, getNodeChildrenKeys, obj } from './utils';
 
 
 type IsChildVarNode<Child> = Child[keyof Child] extends SoftVarNode ? true : false;
@@ -16,7 +16,7 @@ type IsChildVarNode<Child> = Child[keyof Child] extends SoftVarNode ? true : fal
 type ThisNodeDbLikeData<ChildrenOrType, Key extends string> = ModelLikeDbData<Node<ChildrenOrType, Key>>;
 
 // TODO: its not allowing any as ChildrenOrType, to set it as _type. Maybe a third param? Maybe unknown would work
-export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<Omit<{
+export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<{
 
   /**
    * The key / segment of this Node.
@@ -38,11 +38,20 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<Omi
   readonly _blockDatabase: boolean;
 
   /**
-   * Points to the VarNode child, if this Node is a parent of one VarNode. Else, undefined.
-   * The type here is any because it doesn't matter, as it is omitted from the Node, being it useless to the final user.
-   * It is present here, however, to inform us that it actually exists in the Node object, and it is used.
+   * The key of the VarNode child property, if this Node is a parent of a VarNode. Else, undefined.
+   * For internal usage. You certainly won't use this. I didn't omit this to keep the code of
+   * this package type safe. May change on the future.
+   * We use a key instead of direct object reference, to use the `._clone` safely.
    * */
-  readonly _varNodeChild: any;
+  readonly _varNodeChildKey: string | undefined;
+
+  /**
+   * An array of keys of the Nodes that are children of the current Node. If none, [].
+   * For internal usage. You certainly won't use this. I didn't omit this to keep the code of
+   * this package type safe. May change on the future. Includes _varNodeChildKey if have one.
+   * We use a key instead of direct object reference, to use the `._clone` safely.
+   */
+  readonly _nodesChildrenKeys: string[];
 
   /** Make sure you pass the same count of vars and $vars you have on the model path. */
   readonly _pathWithVars: (vars?: string | string[]) => string;
@@ -50,12 +59,12 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<Omi
   // Using SoftNode because Node wasn't working.
   readonly _pathTo: (targetModel: SoftNode, vars?: string | string[]) => string;
 
-  /** Enter the DB-like object and it returns a model-like object. */
-  readonly _dataFromDb: (data: any) => ThisNodeDbLikeData<ChildrenOrType, Key>;
-
   // This makes ModelLikeDbData uses SoftNode type, else would bug for some reason.
   /** Enter the model-like object and it returns a DB-like object, ready to be uploaded. */
   readonly _dataToDb: (data: ThisNodeDbLikeData<ChildrenOrType, Key>) => any;
+
+  /** Enter the DB-like object and it returns a model-like object. */
+  readonly _dataFromDb: (data: any) => ThisNodeDbLikeData<ChildrenOrType, Key>;
 
   // DB operations
   readonly _ref: (vars?: string | string[], database?: Database) => Reference;
@@ -77,7 +86,7 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<Omi
 
   readonly _remove: (vars?: string | string[], database?: Database) => Promise<any>;
 
-  // End of DB operations
+  // // End of DB operations
 
   /**
    * Clones the model and applies the vars value to the paths.
@@ -86,17 +95,32 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<Omi
    * */
   readonly _clone: (vars?: string | string[], database?: Database, blockDatabase?: boolean) => Node<ChildrenOrType, Key>;
 
+  // We don't pass the Node here because it would throw a circular dep
+  readonly _dbType: ModelLikeDbData<ChildrenOrType>;
 
-  readonly _dbType: ModelLikeDbData<ChildrenOrType>; // We don't pass the Node here because it would throw a circular dep
+} & (ChildrenOrType extends obj ? ChildrenOrType : unknown)>;
 
-} & (ChildrenOrType extends obj ? ChildrenOrType : unknown),
-  '_varNodeChild'>>; // We omit it, as isn't useful at all to the user, outside the implementation.
 
 // Comments below aren't used anymore. Will be removed soon
 // Node can be a VarNode or ~NoVarNode. A type of Node that any kind of Node extends it.
 // export type AnyNode = Node<unknown, string>;
-// Use this only if using AnyNode throws circular dependency. _key must have readonly
-export type SoftNode = { readonly _key: string; };
+
+// Use this if using Node throws an error for this package functions.
+// You may add here any Node type you need in the function.
+// (usually using 'this' keyword in the _() throws an error as we are using the Node instead of
+// this SoftNode in the functions implementations)
+export type SoftNode = {
+  readonly _key: string;
+  readonly _path: string;
+  readonly _blockDatabase: boolean;
+  readonly _database: Database | undefined;
+  readonly _varNodeChildKey: string | undefined;
+  readonly _nodesChildrenKeys: string[];
+  readonly _pathWithVars: (vars?: string | string[]) => string;
+  readonly _ref: (vars?: string | string[], database?: Database) => Reference;
+  readonly _dataToDb: (data: any) => any;
+  readonly _dataFromDb: (data: any) => any;
+};
 
 // This doesn't work for most cases, so we are using SoftVarNode for conditionals. 'unknown's fault?
 export type VarNode = Node<unknown, '$'>;
@@ -114,8 +138,9 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
   // TODO: Rename this
   type LocalModelLikeDbData = ThisNodeDbLikeData<ChildrenOrType, Key>;
 
-  const model = {
-    _varNodeChild: getVarNodeChild(children),
+  const model: Node<ChildrenOrType, Key> = {
+    _varNodeChildKey: getVarNodeChildKey(children),
+    _nodesChildrenKeys: getNodeChildrenKeys(children),
     _key: key,
     _path: '', // Will be set later
     _database: undefined, // Will be set later (or not)
@@ -123,13 +148,12 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
     _pathWithVars(vars?: string | string[]): string {
       return pathWithVars(this._path, vars);
     },
-    _pathTo(targetModel: Node, vars?: string | string[]): string {
+    _pathTo(targetModel: SoftNode, vars?: string | string[]): string {
       return pathTo(this, targetModel, vars);
     },
     _dataToDb(obj: LocalModelLikeDbData): any {
       return dataToDb(this, obj);
     },
-    // You enter the model-like obj and it returns a db-like obj, ready to be uploaded
     _dataFromDb(data: any): LocalModelLikeDbData {
       return dataFromDb(this, data);
     },
@@ -137,7 +161,6 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
     _ref(vars?: string | string[], database?: Database): Reference {
       return ref(this, vars, database);
     },
-    // You enter the model-like obj and it returns a db-like obj, ready to be uploaded
     _onceVal(event: EventType, vars?: string | string[], database?: Database): Promise<LocalModelLikeDbData | null> {
       return onceVal(this, event, vars, database);
     },
@@ -153,7 +176,7 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
     _update(value: Partial<LocalModelLikeDbData>, vars?: string | string[], database?: Database) {
       return update(this, value, vars, database);
     },
-    // _push value type is set in the Node type. A little complex to be here.
+    // value parameter is set as any here to simplify. Its type is on Node.
     _push(value?: any, vars?: string | string[], database?: Database) {
       return push(this, value, vars, database);
     },
@@ -165,11 +188,9 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
       return cloneModel(this, vars, database, blockDatabase);
     },
 
-    _dbType: undefined,
-    ...children,
-  } as any as Node<ChildrenOrType, Key>;
-  // For some reason (complex af?) this type force is needed.
-  // TODO: make it doesn't need this type force?
+    _dbType: undefined as any as LocalModelLikeDbData, // 'as any'
+    ...children as any, // TODO: Error without this type force. How to fix?
+  };
 
   return model;
 }

@@ -1,6 +1,6 @@
 import type { Reference, EventType } from '@firebase/database-types';
-import { Node } from './node';
-import { deepClone, isNode, isObject } from './utils';
+import { SoftNode } from './node';
+import { deepCloneNode, getVarNodeChild, isNode, isObject } from './utils';
 
 /** Cross-package Database type, to warn user if the given database argument is wrong. */
 export interface Database {
@@ -47,7 +47,7 @@ export function pathWithVars(path: string, vars?: string | string[]) {
 /** Doesn't include the parentModel key / segment. Includes the target key / segment.
  * If there is a '/' in the beggining, it will be removed.
  */
-export function pathTo(parentModel: Node, targetModel: Node, vars?: string | string[]): string {
+export function pathTo(parentModel: SoftNode, targetModel: SoftNode, vars?: string | string[]): string {
   const targetStr = targetModel._path;
   const initialStr = parentModel._path;
 
@@ -60,7 +60,7 @@ export function pathTo(parentModel: Node, targetModel: Node, vars?: string | str
   if (!initialStr)
     path = targetStr;
   else
-    targetStr.replace(initialStr, '');
+    path = targetStr.replace(initialStr, '');
 
   if (path[0] === '/')
     path = path.replace('/', '');
@@ -68,7 +68,7 @@ export function pathTo(parentModel: Node, targetModel: Node, vars?: string | str
   return pathWithVars(path, vars);
 }
 
-export function ref(model: Node, vars?: string | string[], database?: Database): Reference {
+export function ref(model: SoftNode, vars?: string | string[], database?: Database): Reference {
   if (database) {
     if (model._blockDatabase)
       throw new Error('[firebase-database-modeler]: An database argument has been passed but the blockDatabase was set in _root or _clone function. ._path of this model: ' +
@@ -83,48 +83,52 @@ export function ref(model: Node, vars?: string | string[], database?: Database):
     throw new Error('[firebase-database-modeler]: Database instance is not set. Set it with modelerSetDefaultDatabase(database) or use the database parameter for DB-related methods.');
 }
 
-export async function exists(model: Node, vars?: string | string[], database?: Database): Promise<boolean> {
+export async function exists(model: SoftNode, vars?: string | string[], database?: Database): Promise<boolean> {
   return (await model._ref(vars, database).once('value')).exists();
 }
 
-export async function onceVal(model: Node, event: EventType = 'value', vars?: string | string[], database?: Database): Promise<any> {
+export async function onceVal(model: SoftNode, event: EventType = 'value', vars?: string | string[], database?: Database): Promise<any> {
   const ref = model._ref(vars, database);
   return model._dataFromDb((await ref.once(event)).val());
 }
 
 /** Returns the reference, so you can easily unsubscribe with theReference.off(). */
-export function onVal(model: Node, event: EventType, callback: (val: any) => void, vars?: string | string[], database?: Database): Reference {
+export function onVal(model: SoftNode, event: EventType, callback: (val: any) => void, vars?: string | string[], database?: Database): Reference {
   const ref = model._ref(vars, database);
   ref.on(event, (snapshot: any) => callback(model._dataFromDb(snapshot.val())));
   return ref;
 }
 
-export async function set(model: Node, value: any, vars?: string | string[], database?: Database): Promise<any> {
-  return await model._ref(vars, database).set(model._dataToDb(value));
+export function set(model: SoftNode, value: any, vars?: string | string[], database?: Database): Promise<any> {
+  return model._ref(vars, database).set(model._dataToDb(value));
 }
 
-export async function update(model: Node, value: any, vars?: string | string[], database?: Database): Promise<any> {
-  return await model._ref(vars, database).update(model._dataToDb(value));
+export function update(model: SoftNode, value: any, vars?: string | string[], database?: Database): Promise<any> {
+  return model._ref(vars, database).update(model._dataToDb(value));
 }
 
 // TODO: Improve it ?
 // https://stackoverflow.com/questions/38768576/in-firebase-when-using-push-how-do-i-get-the-unique-id-and-store-in-my-databas
 // https://stackoverflow.com/questions/50031142/firebase-push-promise-never-resolves
 // https://stackoverflow.com/a/49918443/10247962
-export async function push(model: Node, value?: any, vars?: string | string[], database?: Database): Promise<any> {
+// The return type should be set in the Node type, as we can't use Reference & Promise<Reference> here.
+export function push(model: SoftNode, value?: any, vars?: string | string[], database?: Database): any {
   if (!value)
     return model._ref(vars, database).push();
-  return await model._ref(vars, database).push(model._dataToDb(value));
+  // If using push on a varNode parent, use the varNode child model in the conversion
+  if (model._varNodeChildKey)
+    return model._ref(vars, database).push(getVarNodeChild(model, model._varNodeChildKey)._dataToDb(value));
+  return model._ref(vars, database).push(model._dataToDb(value));
 }
 
-export async function remove(model: Node, vars?: string | string[], database?: Database): Promise<any> {
-  return await model._ref(vars, database).remove();
+export function remove(model: SoftNode, vars?: string | string[], database?: Database): Promise<any> {
+  return model._ref(vars, database).remove();
 }
 
 
 
 // Gets a model-like object and makes it compatible with the db schema.
-export function dataToDb<N extends Node>(model: N, data: any): any {
+export function dataToDb(model: SoftNode, data: any): any {
   // If data isn't a object (aka no need to translate keys), return it.
   if (!isObject(data))
     return data;
@@ -134,16 +138,14 @@ export function dataToDb<N extends Node>(model: N, data: any): any {
   // Cycle throught all current children
   for (const [key, value] of Object.entries(data)) {
 
-    // Points to the varNodeChild, if there is one.
-    // As any as _varNodeChild is ommited from Node type
-    const varNodeChild = (model as any)._varNodeChild;
-
-    // The model node is a parent of a VarNode.
-    if (varNodeChild) // As any as _varNodeChild is omitted from the Node type.
-      newObj[key] = dataToDb(varNodeChild, value);
+    // This node is a parent of a VarNode.
+    const varNodeKey = model._varNodeChildKey;
+    if (varNodeKey) // As any as _varNodeChild is omitted from the Node type.
+      // Being the children varNode, we use the key itself.
+      newObj[key] = dataToDb((model as any)[varNodeKey], value);
 
     // The model have a corresponding key
-    else if (model.hasOwnProperty(key)) {
+    else if (model._nodesChildrenKeys.includes(key)) {
       const correspondingModel = (model as any)[key];
       newObj[correspondingModel['_key']] = dataToDb(correspondingModel, value);
     }
@@ -157,7 +159,7 @@ export function dataToDb<N extends Node>(model: N, data: any): any {
 
 // It is like the dataToDb() but somewhat the inverse of it.
 // TODO: Add addDataNotInModel to _onceVal and _onVal (overloading).
-export function dataFromDb<N extends Node>(model: N, dbData: any, addDataNotInModel: boolean = true): any {
+export function dataFromDb(model: SoftNode, dbData: any, addDataNotInModel: boolean = true): any {
   // If data isn't a object (aka no need to translate keys), return it.
   if (!isObject(dbData))
     return dbData;
@@ -167,22 +169,18 @@ export function dataFromDb<N extends Node>(model: N, dbData: any, addDataNotInMo
   // Cycle throught all current children
   for (const [key, value] of Object.entries(dbData)) {
 
-    // Points to the varNodeChild, if there is one.
-    // As any as _varNodeChild is ommited from Node type
-    const varNodeChild = (model as any)._varNodeChild;
-
-    if (varNodeChild)
-      newObj[key] = dataFromDb(varNodeChild, value);
+    const varNodeKey = model._varNodeChildKey;
+    if (varNodeKey)
+      newObj[key] = dataFromDb((model as any)[varNodeKey], value);
 
     else {
-      // TODO: Model could have a ommited prop that would hold children (maybe only _key?), for faster find()'ing
-      const modelEntry = Object.entries(model)
-        .find(([, modelProp]) => isNode(modelProp) && modelProp._key === key
-        ) as [string, Node] | undefined;
+      // TODO: We could have an dict on the Node that would improve this.
+      const nodeChildKey = model._nodesChildrenKeys
+        .find(nodeChildKey => (model as any)[nodeChildKey]._key === key);
 
-      // We found the corresponding modelKey (modelEntry[0]).
-      if (modelEntry)
-        newObj[modelEntry[0]] = dataFromDb(modelEntry[1], value);
+      // We found the corresponding modelKey.
+      if (nodeChildKey)
+        newObj[nodeChildKey] = dataFromDb((model as any)[nodeChildKey], value);
 
       // Corresponding model not found. if addDataNotInModel, copy the data anyway, with the given key.
       else if (addDataNotInModel)
@@ -195,11 +193,10 @@ export function dataFromDb<N extends Node>(model: N, dbData: any, addDataNotInMo
 
 
 // Applies a variable to a model's path and return a cloned model with the new pathes.
-// ToDo: add it to Node as prop.
-export function cloneModel<N extends Node>(model: N, vars: string | string[] | undefined,
+export function cloneModel<N extends SoftNode>(model: N, vars: string | string[] | undefined,
   database: Database | undefined, blockDatabase: boolean | undefined): N {
 
-  const clonedModel = deepClone(model);
+  const clonedModel = deepCloneNode(model);
   recursiveModelApplicator(clonedModel, {
     ...(vars) && {
       path: {
@@ -223,26 +220,26 @@ interface recursiveModelApplicatorI {
   database?: Database;
   blockDatabase?: boolean;
 }
-export function recursiveModelApplicator<N extends Node<{}>>(
+export function recursiveModelApplicator<N extends SoftNode>(
   model: N, { path, database, blockDatabase }: recursiveModelApplicatorI): void {
 
-  // We use as any to override the readonly prop type. They are meant to be changed only here.
+  // We use the "as ..." to override the readonly prop type. They are meant to be changed only here.
   if (path) {
     if (path.forcedPath !== undefined)
-      (model._path as any) = path.forcedPath;
+      (model._path as string) = path.forcedPath;
     else if (!path.parentPath)
-      (model._path as any) = model._key;
+      (model._path as string) = model._key;
     else if (path.parentPath === '/')
-      (model._path as any) += model._key;
+      (model._path as string) = '/' + model._key;
     else
-      (model._path as any) = path.parentPath + '/' + model._key;
+      (model._path as string) = path.parentPath + '/' + model._key;
   }
 
   if (database)
-    (model._database as any) = database;
+    (model._database as Database) = database;
 
   if (blockDatabase)
-    (model._blockDatabase as any) = blockDatabase;
+    (model._blockDatabase as boolean) = blockDatabase;
 
   for (const child of Object.values(model))
     if (typeof child === 'object' && child !== null
