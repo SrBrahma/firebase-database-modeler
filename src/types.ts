@@ -85,12 +85,15 @@ type applyVarNodeIfChild<T> = T extends obj
 export type ModelLikeDbData<T> =
   // Makes it prettier to typescript (removes the Pick<......> around the type)
   Id<
-    // Remove meta keys
-    NoMeta<
-      // Pass the type from _dbType to property
-      _dbTypeToProp<
-        // Convert $variables: T into {[x: string]: T}
-        applyVarNodeIfChild<T>
+    // Makes '| null' or '|undefined' props optional
+    NullUndefinedPropsToOptional<
+      // Remove meta keys
+      NoMeta<
+        // Pass the type from _dbType to property
+        _dbTypeToProp<
+          // Convert $variables: T into {[x: string]: T}
+          applyVarNodeIfChild<T>
+        >
       >
     >
   >;
@@ -100,3 +103,20 @@ export type ModelLikeDbData<T> =
 //   (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never;
 
 // How to check exact type https://fettblog.eu/typescript-match-the-exact-object-shape/
+
+
+
+/**
+ * Get the property keys that can be undefined or null
+ * Based on https://stackoverflow.com/a/53809800/10247962
+*/
+type NullableAndUndefinedKeys<T extends obj> = Exclude<{ [K in keyof T]:
+  Extract<T[K], null | undefined> extends never ? never : K }[keyof T], undefined>;
+
+/**
+ * Applies optional to the given property keys
+ * https://github.com/Microsoft/TypeScript/issues/25760#issuecomment-614417742
+ */
+type KeysToOptional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+
+export type NullUndefinedPropsToOptional<T> = T extends obj ? KeysToOptional<T, NullableAndUndefinedKeys<T>> : T;

@@ -1,3 +1,8 @@
+## 2.4.0
+
+Any null or undefined node are now optional, via `_<T | null>()` or `_<T | undefined>()`. Parents of `_$()` are now automatically optional. README about this will be added later.
+
+
 ## 2.3.0
 
 - Added `._childrenNodeKeys`, an string[] of the Node children that are Node. Internal usage.
