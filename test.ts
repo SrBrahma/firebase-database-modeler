@@ -1,3 +1,5 @@
+// General tests for internal development.
+
 import { _, _$, _root } from './src';
 import { Id, NullUndefinedPropsToOptional } from './src/types';
 import { mEmptyObj, obj } from './src/utils';
@@ -23,7 +25,7 @@ type Q<T> = T extends obj ? keyof T : T;
 type k = 'k';
 type check = string extends k ? 1 : 0;
 
-type log2 = NullUndefinedPropsToOptional<logIdType>;
+// type log2 = NullUndefinedPropsToOptional<logIdType>;
 
 type fakeLogId = NullUndefinedPropsToOptional<{
   key: number,
