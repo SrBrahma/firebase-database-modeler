@@ -1,3 +1,8 @@
+## 2.4.4
+
+Fixed breaking change of 2.4.0. Now it should work properly.
+
+
 ## 2.4.0
 
 Any null or undefined node are now optional, via `_<T | null>()` or `_<T | undefined>()`. Parents of `_$()` are now automatically optional. README about this will be added later.

@@ -13,7 +13,7 @@ type IsChildVarNode<Child> = Child[keyof Child] extends SoftVarNode ? true : fal
 // type ThisNode<ChildrenOrType, Key extends string> = Node<ChildrenOrType, Key>;
 
 // Little shorter version to use below.
-type ThisNodeDbLikeData<ChildrenOrType, Key extends string> = ModelLikeDbData<Node<ChildrenOrType, Key>>;
+type ThisNodeDbLikeData<ChildrenOrType, Key extends string> = ModelLikeDbData<(Node<ChildrenOrType, Key>)>;
 
 // TODO: its not allowing any as ChildrenOrType, to set it as _type. Maybe a third param? Maybe unknown would work
 export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<{

@@ -4,7 +4,7 @@ import { AllNodeKeys, SoftVarNode } from './node';
 // Use typeof in this to get the model property type if set (boolean, number, etc)
 // This is also used in convertedFromDb() to build the fetched data
 // This is only applied into final Nodes.
-type _dbType<T> = { readonly _dbType: T; };
+type _dbType<T = any> = { readonly _dbType: T; };
 
 
 // The distributive and recursively terms here may not be quite right, as
@@ -41,27 +41,16 @@ type NonFilledObjToAnyRecursively<T extends obj> =
 
 
 
-// https://stackoverflow.com/a/61132308/10247962
-// type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
-
+// Couldn't use T[K]['_dbType'], so made this.
+type AuxDbToType<T> = T extends _dbType ? T['_dbType'] : T;
 
 // Passes the type from _dbType to T.
 // We need to do this initial obj checking because _dbTypes may point to a type like number.
-type _dbTypeToProp<T> = T extends _dbType<any>
-  ? (
-    T extends _dbType<obj>
-    ? { [K in keyof T]: _dbTypeToProp<T[K]> }
-    : T['_dbType']// _dbType is a simple type
-  )
-  : (T extends obj
-    ? { [K in keyof T]: _dbTypeToProp<T[K]> }
-    : T);//T; // Don't have a _dbType prop.
+type _dbTypeToProp<T> = T extends obj
+  ? { [K in keyof T]: AuxDbToType<T[K]> }
+  : T;
 
-// { [K in keyof T]: T[K] extends {_dbType: any}
-// ? (T[K] extends {_dbType: obj} ? _typeToProp<T[K]> : T[K]['_dbType'])
-// : _typeToProp<T[K]> }
-// These two below were seriously fucking difficult. I tried so many different ways to get it working.
-// More than 20h of brain torturing and googling hints to write 6 lines (plus changes in the Node)
+
 
 // Checks if the Node T has a child that is a VarNode (created with _$).
 // If so, return this VarNode child, else, never.
@@ -75,42 +64,40 @@ type getVarNodeChild<T> = { [K in keyof T]: T[K] extends SoftVarNode ? T[K] : ne
 // [$: string] was being decomposed as [x: string] and [x: number], and Record was
 // returning "Type ... is not generic". This solution I discovered was a huge life saver.
 // extends obj instead of AnyNode, because in the dbType case, it doesn't pass an initial Node (else would be circular dep)
-type applyVarNodeIfChild<T> = T extends obj
+type ApplyVarNodeIfChild<T> = T extends obj
   ? (getVarNodeChild<T> extends never
-    ? { [K in keyof T]: applyVarNodeIfChild<T[K]> }
-    : { [P in string]: applyVarNodeIfChild<getVarNodeChild<T>> } | null)
+    ? T
+    : { [P in string]: ApplyVarNodeIfChild<getVarNodeChild<T>> } | null)
   : T;
+
+// Probably don't need to be recursive.
+type NoMetaButDbType<T> = T extends obj ? OmitRecursively<T, Exclude<AllNodeKeys, '_dbType'>> : T;
 
 // T is the model. It returns how db data looks like in a model-like way.
 export type ModelLikeDbData<T> =
-  // Makes it prettier to typescript (removes the Pick<......> around the type)
-  Id<
-    // Makes '| null' or '|undefined' props optional
-    NullUndefinedPropsToOptional<
+  // Makes '| null' or '|undefined' props optional
+  NullUndefinedPropsToOptional<
+    // Makes it prettier to typescript (removes the Pick<......> around the type)
+    Id<
       // Remove meta keys
       NoMeta<
         // Pass the type from _dbType to property
         _dbTypeToProp<
-          // Convert $variables: T into {[x: string]: T}
-          applyVarNodeIfChild<T>
+          // Will use the _dbType on _dbTypeToProp
+          NoMetaButDbType<
+            // Convert $variables: T into {[x: string]: T}
+            ApplyVarNodeIfChild<T>
+          >
         >
       >
     >
   >;
 
-// https://stackoverflow.com/a/50375286/10247962
-// type UnionToIntersection<U> =
-//   (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never;
-
-// How to check exact type https://fettblog.eu/typescript-match-the-exact-object-shape/
-
-
-
 /**
  * Get the property keys that can be undefined or null
  * Based on https://stackoverflow.com/a/53809800/10247962
 */
-type NullableAndUndefinedKeys<T extends obj> = Exclude<{ [K in keyof T]:
+type NullableAndUndefinedKeys<T> = Exclude<{ [K in keyof T]:
   Extract<T[K], null | undefined> extends never ? never : K }[keyof T], undefined>;
 
 /**
@@ -119,4 +106,19 @@ type NullableAndUndefinedKeys<T extends obj> = Exclude<{ [K in keyof T]:
  */
 type KeysToOptional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
 
-export type NullUndefinedPropsToOptional<T> = T extends obj ? KeysToOptional<T, NullableAndUndefinedKeys<T>> : T;
+
+export type NullUndefinedPropsToOptional<T> =
+  T extends obj
+  ? (string extends keyof T
+    ? T // Nothing if in an dynamic record (VarNode)
+    : Id<KeysToOptional<T, NullableAndUndefinedKeys<T>>>
+  ) : T;
+
+// https://stackoverflow.com/a/61132308/10247962
+// type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
+
+// https://stackoverflow.com/a/50375286/10247962
+// type UnionToIntersection<U> =
+//   (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never;
+
+// How to check exact type https://fettblog.eu/typescript-match-the-exact-object-shape/

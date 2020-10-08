@@ -1,6 +1,6 @@
 {
   "name": "firebase-database-modeler",
-  "version": "2.4.3",
+  "version": "2.4.4",
   "description": "Create and use Firebase Realtime Database models",
   "main": "lib/index.js",
   "scripts": {
