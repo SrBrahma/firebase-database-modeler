@@ -12,9 +12,6 @@ type IsChildVarNode<Child> = Child[keyof Child] extends SoftVarNode ? true : fal
 // Just an alias for improving the comprehension of the code.
 // type ThisNode<ChildrenOrType, Key extends string> = Node<ChildrenOrType, Key>;
 
-// Little shorter version to use below.
-type ThisNodeDbLikeData<ChildrenOrType, Key extends string> = ModelLikeDbData<(Node<ChildrenOrType, Key>)>;
-
 // TODO: its not allowing any as ChildrenOrType, to set it as _type. Maybe a third param? Maybe unknown would work
 export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<{
 
@@ -61,28 +58,28 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<{
 
   // This makes ModelLikeDbData uses SoftNode type, else would bug for some reason.
   /** Enter the model-like object and it returns a DB-like object, ready to be uploaded. */
-  readonly _dataToDb: (data: ThisNodeDbLikeData<ChildrenOrType, Key>) => any;
+  readonly _dataToDb: (data: ModelLikeDbData<ChildrenOrType>) => any;
 
   /** Enter the DB-like object and it returns a model-like object. */
-  readonly _dataFromDb: (data: any) => ThisNodeDbLikeData<ChildrenOrType, Key>;
+  readonly _dataFromDb: (data: any) => ModelLikeDbData<ChildrenOrType>;
 
   // DB operations
   readonly _ref: (vars?: string | string[], database?: Database) => Reference;
 
-  readonly _onceVal: (event: EventType, vars?: string | string[], database?: Database) => Promise<ThisNodeDbLikeData<ChildrenOrType, Key> | null>;
+  readonly _onceVal: (event: EventType, vars?: string | string[], database?: Database) => Promise<ModelLikeDbData<ChildrenOrType> | null>;
 
-  readonly _onVal: (event: EventType, callback: (val: ThisNodeDbLikeData<ChildrenOrType, Key> | null) => void, vars?: string | string[], database?: Database) => Reference;
+  readonly _onVal: (event: EventType, callback: (val: ModelLikeDbData<ChildrenOrType> | null) => void, vars?: string | string[], database?: Database) => Reference;
 
   readonly _exists: (vars?: string | string[], database?: Database) => Promise<boolean>;
 
-  readonly _set: (value: ThisNodeDbLikeData<ChildrenOrType, Key>, vars?: string | string[], database?: Database) => Promise<any>;
+  readonly _set: (value: ModelLikeDbData<ChildrenOrType>, vars?: string | string[], database?: Database) => Promise<any>;
 
-  readonly _update: (value: Partial<ThisNodeDbLikeData<ChildrenOrType, Key>>, vars?: string | string[], database?: Database) => Promise<any>;
+  readonly _update: (value: Partial<ModelLikeDbData<ChildrenOrType>>, vars?: string | string[], database?: Database) => Promise<any>;
 
   // TODO: improve _push rtn type? Generic conditional for ValType === undefined ? Reference : Promise<Reference> ?
   readonly _push: <T extends (IsChildVarNode<ChildrenOrType> extends true
     ? ModelLikeDbData<ChildrenOrType[keyof ChildrenOrType]>
-    : ThisNodeDbLikeData<ChildrenOrType, Key>) >(value?: T, vars?: string | string[], database?: Database) => Reference & Promise<Reference>;
+    : ModelLikeDbData<ChildrenOrType>) >(value?: T, vars?: string | string[], database?: Database) => Reference & Promise<Reference>;
 
   readonly _remove: (vars?: string | string[], database?: Database) => Promise<any>;
 
@@ -136,7 +133,7 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
   : Node<ChildrenOrType, Key> {
 
   // TODO: Rename this
-  type LocalModelLikeDbData = ThisNodeDbLikeData<ChildrenOrType, Key>;
+  type LocalModelLikeDbData = ModelLikeDbData<ChildrenOrType>;
 
   const model: Node<ChildrenOrType, Key> = {
     _varNodeChildKey: getVarNodeChildKey(children),
