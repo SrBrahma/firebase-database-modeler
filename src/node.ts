@@ -202,12 +202,13 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
     _dbType: undefined as any as LocalModelLikeDbData, // 'as any'
     ...(key === '/') && {
       _onConnected(callback: (val: boolean) => void, database?: Database): Reference {
-        const refe = ref(this, [], database).child('.info/connected');
+        // We can't use child('.info...') as it would complain about the '.' of '.info'
+        const refe = ref(model, [], database, '.info/connected');
         refe.on('value', snap => callback(snap.val()));
         return refe;
       },
       _onServerTimeOffset(callback: (val: number) => void, database?: Database): Reference {
-        const refe = ref(this, [], database).child('.info/serverTimeOffset');
+        const refe = ref(model, [], database, '.info/serverTimeOffset');
         refe.on('value', snap => callback(snap.val()));
         return refe;
       },

@@ -68,7 +68,7 @@ export function pathTo(parentModel: SoftNode, targetModel: SoftNode, vars?: stri
   return pathWithVars(path, vars);
 }
 
-export function ref(model: SoftNode, vars?: string | string[], database?: Database): Reference {
+export function ref(model: SoftNode, vars?: string | string[], database?: Database, forcedPath?: string): Reference {
   let db;
   if (database) {
     if (model._blockDatabase)
@@ -83,7 +83,7 @@ export function ref(model: SoftNode, vars?: string | string[], database?: Databa
   else
     throw new Error('[firebase-database-modeler]: Database instance is not set. Set it with modelerSetDefaultDatabase(database) or use the database parameter for DB-related methods.');
 
-  return db.ref(model._pathWithVars(vars));
+  return db.ref(forcedPath ?? model._pathWithVars(vars));
 }
 
 
