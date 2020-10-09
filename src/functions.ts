@@ -69,19 +69,23 @@ export function pathTo(parentModel: SoftNode, targetModel: SoftNode, vars?: stri
 }
 
 export function ref(model: SoftNode, vars?: string | string[], database?: Database): Reference {
+  let db;
   if (database) {
     if (model._blockDatabase)
       throw new Error('[firebase-database-modeler]: An database argument has been passed but the blockDatabase was set in _root or _clone function. ._path of this model: ' +
         model._path);
-    return database.ref(model._pathWithVars(vars));
+    db = database;
   }
-  if (model._database)
-    return model._database.ref(model._pathWithVars(vars));
-  if (defaultDatabase)
-    return defaultDatabase.ref(model._pathWithVars(vars));
+  else if (model._database)
+    db = model._database;
+  else if (defaultDatabase)
+    db = defaultDatabase;
   else
     throw new Error('[firebase-database-modeler]: Database instance is not set. Set it with modelerSetDefaultDatabase(database) or use the database parameter for DB-related methods.');
+
+  return db.ref(model._pathWithVars(vars));
 }
+
 
 export async function exists(model: SoftNode, vars?: string | string[], database?: Database): Promise<boolean> {
   return (await model._ref(vars, database).once('value')).exists();

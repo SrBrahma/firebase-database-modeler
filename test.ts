@@ -58,4 +58,7 @@ export const master = _root({
   })
 });
 
+
 type masterRoot = typeof master._dbType;
+
+type AQQ = '$' extends '$' ? 1 : 0;

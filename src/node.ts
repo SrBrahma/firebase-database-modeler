@@ -95,7 +95,21 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<{
   // We don't pass the Node here because it would throw a circular dep
   readonly _dbType: ModelLikeDbData<ChildrenOrType>;
 
-} & (ChildrenOrType extends obj ? ChildrenOrType : unknown)>;
+} & (ChildrenOrType extends obj ? ChildrenOrType : unknown)
+  & (Key extends '/'
+    ? {
+      /**
+       * https://firebase.google.com/docs/database/web/offline-capabilities#section-connection-state
+       */
+      _onConnected: (callback: (val: boolean) => void, database?: Database) => Reference;
+
+      /**
+       * https://firebase.google.com/docs/database/web/offline-capabilities#clock-skew
+       */
+      _onServerTimeOffset: (callback: (val: number) => void, database?: Database) => Reference;
+    } : unknown)
+
+>;
 
 
 // Comments below aren't used anymore. Will be removed soon
@@ -186,6 +200,18 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
     },
 
     _dbType: undefined as any as LocalModelLikeDbData, // 'as any'
+    ...(key === '/') && {
+      _onConnected(callback: (val: boolean) => void, database?: Database): Reference {
+        const refe = ref(this, [], database).child('.info/connected');
+        refe.on('value', snap => callback(snap.val()));
+        return refe;
+      },
+      _onServerTimeOffset(callback: (val: number) => void, database?: Database): Reference {
+        const refe = ref(this, [], database).child('.info/serverTimeOffset');
+        refe.on('value', snap => callback(snap.val()));
+        return refe;
+      },
+    },
     ...children as any, // TODO: Error without this type force. How to fix?
   };
 
@@ -207,7 +233,7 @@ export function _$<ChildrenOrType>(children: ChildrenOrType = undefined as any a
 export function _root<ChildrenOrType>(children: ChildrenOrType = undefined as any as ChildrenOrType,
   database?: Database, blockDatabase: boolean = false)
   : Node<ChildrenOrType, '/'> {
-  const model = _('/' as const, children) as any;
+  const model = _('/' as const, children);
   // Without as any, recursiveModelApplicator was throwing error.
   // TODO: Fix? How?
 

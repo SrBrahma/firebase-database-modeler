@@ -1,3 +1,11 @@
+## 2.5.0
+
+Added `._onConnected()` and `._onServerTimeOffset()` on any _root Node. They are a shortcut for
+
+https://firebase.google.com/docs/database/web/offline-capabilities#section-connection-state and https://firebase.google.com/docs/database/web/offline-capabilities#clock-skew.
+
+Their README sections will be added later, as I am in a rush to finish my App.
+
 ## 2.4.1~5
 
 Fixed breaking change of 2.4.0. Now it should work properly.
