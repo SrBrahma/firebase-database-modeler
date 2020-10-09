@@ -92,8 +92,17 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<{
    * */
   readonly _clone: (vars?: string | string[], database?: Database, blockDatabase?: boolean) => Node<ChildrenOrType, Key>;
 
-  // We don't pass the Node here because it would throw a circular dep
+  /**
+   * How the data is stored in the Realtime Database, but showing the model keys instead of the real keys.
+   *
+   * Usage:
+   *
+   * `type A = typeof modelRoot.seg1.seg2._dbType`
+   * */
   readonly _dbType: ModelLikeDbData<ChildrenOrType>;
+
+  /** Same as _dbType but Excludes the null type from it, if present. */
+  readonly _dbTypeNoNull: Exclude<ModelLikeDbData<ChildrenOrType>, null>;
 
 } & (ChildrenOrType extends obj ? ChildrenOrType : unknown)
   & (Key extends '/'
@@ -199,7 +208,9 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
       return cloneModel(this, vars, database, blockDatabase);
     },
 
-    _dbType: undefined as any as LocalModelLikeDbData, // 'as any'
+    _dbType: undefined as any as LocalModelLikeDbData,
+    _dbTypeNoNull: undefined as any as LocalModelLikeDbData,
+
     ...(key === '/') && {
       _onConnected(callback: (val: boolean) => void, database?: Database): Reference {
         // We can't use child('.info...') as it would complain about the '.' of '.info'
@@ -213,7 +224,9 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
         return refe;
       },
     },
-    ...children as any, // TODO: Error without this type force. How to fix?
+    ...children as any,
+    // TODO: Error without this type force. How to fix? Also, being any, makes the model don't
+    // throw a TS error if missing types in this const
   };
 
   return model;

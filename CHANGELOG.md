@@ -1,3 +1,7 @@
+## 2.5.2
+
+Added `._dbTypeNoNull`
+
 ## 2.5.0~1
 
 Added `._onConnected()` and `._onServerTimeOffset()` on any _root Node. They are a shortcut for
