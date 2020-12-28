@@ -76,7 +76,7 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<{
    * As the original function, it returns the promise of the resulting successful value at the current time.
    * */
   readonly _transaction: (
-    callback: (val: ModelLikeDbData<ChildrenOrType> | null) => ModelLikeDbData<ChildrenOrType> | null | undefined,
+    callback: (current: ModelLikeDbData<ChildrenOrType> | null) => ModelLikeDbData<ChildrenOrType> | null | undefined,
     vars?: string | string[], database?: Database
   ) => Promise<ModelLikeDbData<ChildrenOrType> | null>;
 
@@ -207,7 +207,7 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
     _onVal(event: EventType, callback: (val: LocalModelLikeDbData | null) => void, vars?: string | string[], database?: Database): Reference {
       return onVal(this, event, callback, vars, database);
     },
-    _transaction(callback: (val: ModelLikeDbData<ChildrenOrType> | null) => ModelLikeDbData<ChildrenOrType> | null | undefined,
+    _transaction(callback: (current: ModelLikeDbData<ChildrenOrType> | null) => ModelLikeDbData<ChildrenOrType> | null | undefined,
       vars?: string | string[], database?: Database): Promise<ModelLikeDbData<ChildrenOrType> | null> {
       return transaction(this, callback, vars, database);
     },

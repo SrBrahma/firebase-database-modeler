@@ -1,4 +1,4 @@
-## 2.6.0 - December 28th, 2020
+## 2.6.0~1 - December 28th, 2020
 
 * Added `_transaction()`!
 
