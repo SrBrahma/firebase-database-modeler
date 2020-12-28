@@ -1,7 +1,7 @@
 import type { Reference, EventType } from '@firebase/database-types';
 import {
   ref, cloneModel, dataToDb, dataFromDb, onceVal,
-  onVal, exists, pathWithVars, set, update, push, remove, pathTo, Database, recursiveModelApplicator
+  onVal, exists, pathWithVars, set, update, push, remove, pathTo, Database, recursiveModelApplicator, transaction
 } from './functions';
 import { ModelLikeDbData, Id } from './types';
 import { getVarNodeChildKey, getNodeChildrenKeys, obj } from './utils';
@@ -70,11 +70,22 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<{
 
   readonly _onVal: (event: EventType, callback: (val: ModelLikeDbData<ChildrenOrType> | null) => void, vars?: string | string[], database?: Database) => Reference;
 
+  /** Same as RTDB transaction, but will _dataFromDb the callback parameter, and will _dataToDb the return
+   * of the callback.
+   *
+   * As the original function, it returns the promise of the resulting successful value at the current time.
+   * */
+  readonly _transaction: (
+    callback: (val: ModelLikeDbData<ChildrenOrType> | null) => ModelLikeDbData<ChildrenOrType> | null | undefined,
+    vars?: string | string[], database?: Database
+  ) => Promise<ModelLikeDbData<ChildrenOrType> | null>;
+
   readonly _exists: (vars?: string | string[], database?: Database) => Promise<boolean>;
 
   readonly _set: (value: ModelLikeDbData<ChildrenOrType>, vars?: string | string[], database?: Database) => Promise<any>;
 
   readonly _update: (value: Partial<ModelLikeDbData<ChildrenOrType>>, vars?: string | string[], database?: Database) => Promise<any>;
+
 
   // TODO: improve _push rtn type? Generic conditional for ValType === undefined ? Reference : Promise<Reference> ?
   readonly _push: <T extends (IsChildVarNode<ChildrenOrType> extends true
@@ -103,6 +114,15 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<{
 
   /** Same as _dbType but Excludes the null type from it, if present. */
   readonly _dbTypeNoNull: Exclude<ModelLikeDbData<ChildrenOrType>, null>;
+
+  // /**
+  //  * How the data is really stored in the Realtime Database.
+  //  *
+  //  * Usage:
+  //  *
+  //  * `type A = typeof modelRoot.seg1.seg2._realDbType`
+  //  * */
+  // readonly _realDbType: ModelRealDbData<ChildrenOrType>;
 
 } & (ChildrenOrType extends obj ? ChildrenOrType : unknown)
   & (Key extends '/'
@@ -174,7 +194,7 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
     _dataToDb(obj: LocalModelLikeDbData): any {
       return dataToDb(this, obj);
     },
-    _dataFromDb(data: any): LocalModelLikeDbData {
+    _dataFromDb(data: any): LocalModelLikeDbData | null {
       return dataFromDb(this, data);
     },
 
@@ -186,6 +206,10 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
     },
     _onVal(event: EventType, callback: (val: LocalModelLikeDbData | null) => void, vars?: string | string[], database?: Database): Reference {
       return onVal(this, event, callback, vars, database);
+    },
+    _transaction(callback: (val: ModelLikeDbData<ChildrenOrType> | null) => ModelLikeDbData<ChildrenOrType> | null | undefined,
+      vars?: string | string[], database?: Database): Promise<ModelLikeDbData<ChildrenOrType> | null> {
+      return transaction(this, callback, vars, database);
     },
     _exists(vars?: string | string[], database?: Database): Promise<boolean> {
       return exists(this, vars, database);

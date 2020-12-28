@@ -38,8 +38,8 @@ export function pathWithVars(path: string, vars?: string | string[]) {
   return path.replace(allDolarRegex, () => {
     const val = vars?.[varsI++]!; // If is undefined, pathSegmentIsValid will return false.
     if (!pathSegmentIsValid(val as string))
-      throw Error(`[firebase-database-modeler]: vars[${varsI}] not set or has an invalid value (= ${val}).`
-        + `path = ${path}. vars = ${vars}. Regex valid pattern = ${validSegmentChars.source}`);
+      throw Error(`[firebase-database-modeler]: vars[${varsI}] not set or has an invalid value. Value=(${val}),`
+        + ` Path=(${path}), Vars=(${vars}), RegexValidation="${validSegmentChars.source}"`);
     return val;
   });
 }
@@ -91,17 +91,27 @@ export async function exists(model: SoftNode, vars?: string | string[], database
   return (await model._ref(vars, database).once('value')).exists();
 }
 
-export async function onceVal(model: SoftNode, event: EventType = 'value', vars?: string | string[], database?: Database): Promise<any> {
+export async function onceVal(model: SoftNode, event: EventType = 'value', vars?: string | string[], database?: Database): Promise<any | null> {
   const ref = model._ref(vars, database);
   return model._dataFromDb((await ref.once(event)).val());
 }
 
 /** Returns the reference, so you can easily unsubscribe with theReference.off(). */
-export function onVal(model: SoftNode, event: EventType, callback: (val: any) => void, vars?: string | string[], database?: Database): Reference {
+export function onVal(model: SoftNode, event: EventType, callback: (val: any | null) => void, vars?: string | string[], database?: Database): Reference {
   const ref = model._ref(vars, database);
   ref.on(event, (snapshot: any) => callback(model._dataFromDb(snapshot.val())));
   return ref;
 }
+
+export function transaction(model: SoftNode,
+  callback: (val: any | null) => any | null | undefined, vars?: string | string[], database?: Database
+): Promise<any | null> {
+  const ref = model._ref(vars, database);
+  return ref.transaction(
+    v => model._dataToDb(callback(model._dataFromDb((v))))
+  );
+}
+
 
 export function set(model: SoftNode, value: any, vars?: string | string[], database?: Database): Promise<any> {
   return model._ref(vars, database).set(model._dataToDb(value));

@@ -1,8 +1,14 @@
-## 2.5.2
+## 2.6.0 - December 28th, 2020
 
-Added `._dbTypeNoNull`
+* Added `_transaction()`!
 
-## 2.5.0~1
+* Fixed _dataFromDb not including null in return type as union [#1](https://github.com/SrBrahma/Firebase-Database-Modeler/issues/1)
+
+## 2.5.2 - October 9th, 2020
+
+* Added `._dbTypeNoNull`
+
+## 2.5.0~1 - October 8th, 2020
 
 Added `._onConnected()` and `._onServerTimeOffset()` on any _root Node. They are a shortcut for
 
@@ -10,17 +16,17 @@ https://firebase.google.com/docs/database/web/offline-capabilities#section-conne
 
 Their README sections will be added later, as I am in a rush to finish my App.
 
-## 2.4.1~5
+## 2.4.1~5 - October 8th, 2020
 
 Fixed breaking change of 2.4.0. Now it should work properly.
 
 
-## 2.4.0
+## 2.4.0 - October 7th, 2020 4:28pm
 
 Any null or undefined node are now optional, via `_<T | null>()` or `_<T | undefined>()`. Parents of `_$()` are now automatically optional. README about this will be added later.
 
 
-## 2.3.0
+## 2.3.0 - October 5th, 2020
 
 - Added `._childrenNodeKeys`, an string[] of the Node children that are Node. Internal usage.
 
@@ -72,7 +78,7 @@ as it self references.
 
 -  Added `database` to the `_root()` and `._clone()` functions.
 
-# Major 2.0.0
+# Major 2.0.0 - September 25th, 2020
 
 -  Changed variadic `...vars: string[]` to `vars?: string | string[]`.
 
