@@ -42,7 +42,8 @@ const stores = _('stores', {
   $storeId: _$({
     name: _<string>('n'), // The DB property key can be different from the model property key!
     rating: _<number>('rating'),
-    open: _<boolean>('open')
+    open: _<boolean>('open'),
+    optionalProp: _<number | null>('oP'), // You can tag the model property as optional by adding `| null`.
     users: _('users', {
       $userId: _$({
         name: _<string>('name')
