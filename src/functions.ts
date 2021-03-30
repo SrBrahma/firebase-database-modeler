@@ -1,5 +1,6 @@
 import type { Reference, EventType } from '@firebase/database-types';
 import { SoftNode } from './node';
+import { DataFromDb, TransactionResult } from './types';
 import { deepCloneNode, getVarNodeChild, isNode, isObject } from './utils';
 
 /** Cross-package Database type, to warn user if the given database argument is wrong. */
@@ -17,7 +18,7 @@ export let defaultDatabase: Database | undefined;
  * The type is any
  * @param {Database} database
  */
-export function modelerSetDefaultDatabase(database: Database) {
+export function modelerSetDefaultDatabase(database: Database): void {
   defaultDatabase = database;
 }
 
@@ -27,20 +28,20 @@ const allDolarRegex = new RegExp('\\$', 'g');
 const validSegmentChars = /^[a-zA-Z0-9_-]+$/; // Also tests for '' (empty string).
 
 
-export function pathSegmentIsValid(segment: string): boolean {
+export function pathSegmentIsValid(segment: string | undefined): boolean {
   return ((typeof segment === 'string') && validSegmentChars.test(segment));
 }
 
-export function pathWithVars(path: string, vars?: string | string[]) {
+export function pathWithVars(path: string, vars?: string | string[]): string {
   if (vars && !Array.isArray(vars))
     vars = [vars];
   let varsI = 0;
   return path.replace(allDolarRegex, () => {
-    const val = vars?.[varsI++]!; // If is undefined, pathSegmentIsValid will return false.
-    if (!pathSegmentIsValid(val as string))
+    const val = vars?.[varsI++];
+    if (!pathSegmentIsValid(val))
       throw Error(`[firebase-database-modeler]: vars[${varsI}] not set or has an invalid value. Value=(${val}),`
         + ` Path=(${path}), Vars=(${vars}), RegexValidation="${validSegmentChars.source}"`);
-    return val;
+    return val as string;
   });
 }
 
@@ -103,21 +104,31 @@ export function onVal(model: SoftNode, event: EventType, callback: (val: any | n
   return ref;
 }
 
-export function transaction(model: SoftNode,
-  callback: (val: any | null) => any | null | undefined, vars?: string | string[], database?: Database
-): Promise<any | null> {
+export function transaction<T>(model: SoftNode,
+  callback: (val: T | null) => T | null | undefined, applyLocaly?: boolean, vars?: string | string[], database?: Database
+): Promise<TransactionResult<T>> {
   const ref = model._ref(vars, database);
-  return ref.transaction(
-    v => model._dataToDb(callback(model._dataFromDb((v))))
-  );
+  return new Promise<TransactionResult<T>>((resolve, reject) => {
+    ref.transaction(
+      v => model._dataToDb(callback(model._dataFromDb((v)))),
+      (error, committed, snap) => {
+        if (error)
+          return reject(error);
+        return resolve({
+          committed,
+          result: model._dataFromDb(snap?.val())
+        });
+      }, applyLocaly
+    );
+  });
 }
 
 
-export function set(model: SoftNode, value: any, vars?: string | string[], database?: Database): Promise<any> {
+export function set(model: SoftNode, value: unknown, vars?: string | string[], database?: Database): Promise<any> {
   return model._ref(vars, database).set(model._dataToDb(value));
 }
 
-export function update(model: SoftNode, value: any, vars?: string | string[], database?: Database): Promise<any> {
+export function update(model: SoftNode, value: unknown, vars?: string | string[], database?: Database): Promise<any> {
   return model._ref(vars, database).update(model._dataToDb(value));
 }
 
@@ -126,7 +137,7 @@ export function update(model: SoftNode, value: any, vars?: string | string[], da
 // https://stackoverflow.com/questions/50031142/firebase-push-promise-never-resolves
 // https://stackoverflow.com/a/49918443/10247962
 // The return type should be set in the Node type, as we can't use Reference & Promise<Reference> here.
-export function push(model: SoftNode, value?: any, vars?: string | string[], database?: Database): any {
+export function push(model: SoftNode, value?: unknown, vars?: string | string[], database?: Database): any {
   if (!value)
     return model._ref(vars, database).push();
   // If using push on a varNode parent, use the varNode child model in the conversion
@@ -142,7 +153,7 @@ export function remove(model: SoftNode, vars?: string | string[], database?: Dat
 
 
 // Gets a model-like object and makes it compatible with the db schema.
-export function dataToDb(model: SoftNode, data: any): any {
+export function dataToDb(model: SoftNode, data: unknown): any {
   // If data isn't a object (aka no need to translate keys), return it.
   if (!isObject(data))
     return data;
@@ -173,7 +184,7 @@ export function dataToDb(model: SoftNode, data: any): any {
 
 // It is like the dataToDb() but somewhat the inverse of it.
 // TODO: Add addDataNotInModel to _onceVal and _onVal (overloading).
-export function dataFromDb(model: SoftNode, dbData: any, addDataNotInModel: boolean = true): any {
+export function dataFromDb(model: SoftNode, dbData: DataFromDb, addDataNotInModel: boolean = true): any {
   // If data isn't a object (aka no need to translate keys), return it.
   if (!isObject(dbData))
     return dbData;
@@ -181,7 +192,7 @@ export function dataFromDb(model: SoftNode, dbData: any, addDataNotInModel: bool
   const newObj: any = {};
 
   // Cycle throught all current children
-  for (const [key, value] of Object.entries(dbData)) {
+  for (const [key, value] of Object.entries(dbData) as [string, any]) {
 
     const varNodeKey = model._varNodeChildKey;
     if (varNodeKey)

@@ -1,6 +1,18 @@
 import { obj } from './utils';
 import { AllNodeKeys, SoftVarNode } from './node';
 
+/** To avoid passing a snapshot instead of the val() by mistake. */
+export type DataFromDb = obj | string | number | boolean | null;
+
+
+// Inspired on https://github.com/invertase/react-native-firebase/blob/master/packages/database/lib/index.d.ts
+export type TransactionResult<T> = {
+  committed: boolean;
+  result: T;
+};
+
+
+
 // Use typeof in this to get the model property type if set (boolean, number, etc)
 // This is also used in convertedFromDb() to build the fetched data
 // This is only applied into final Nodes.
@@ -75,7 +87,7 @@ type NoMetaButDbType<T> = T extends obj ? OmitRecursively<T, Exclude<AllNodeKeys
 
 // T is the model. It returns how db data looks like in a model-like way.
 export type ModelLikeDbData<T> =
-  // Makes '| null' or '|undefined' props optional
+  // Makes '| null' or '| undefined' props optional
   NullUndefinedPropsToOptional<
     // Makes it prettier to typescript (removes the Pick<......> around the type)
     Id<

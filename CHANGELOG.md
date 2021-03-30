@@ -1,12 +1,33 @@
-## 2.6.0~1 - December 28th, 2020
+## 2.7.3 - March 29th, 2021
 
-* Added `_transaction()`!
+* Added Id<> wrapper to NullableModelLike<>. This improves the return type of ._onceVal, ._dataFromDb etc.
+
+## 2.7.2 - December 28th, 2020
+
+* Improved `_dataFromDb` return type.
+
+## 2.7.1 - December 28th, 2020
+
+* Fixed typo in `committed`, in `._transaction()` return.
+
+## 2.7.0 - December 28th, 2020
+
+* Changed `._transaction()` return to allow the check of `commited` status.
+
+* Changed `._dataFromDb()` data type, to avoid passing snapshots instead of snapshot.val().
+
+
+## 2.6.0~2 - December 28th, 2020
+
+* Added `._transaction()`!
 
 * Fixed _dataFromDb not including null in return type as union [#1](https://github.com/SrBrahma/Firebase-Database-Modeler/issues/1)
+
 
 ## 2.5.2 - October 9th, 2020
 
 * Added `._dbTypeNoNull`
+
 
 ## 2.5.0~1 - October 8th, 2020
 

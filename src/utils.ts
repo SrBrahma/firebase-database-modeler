@@ -35,7 +35,7 @@ export function deepCloneNode<T extends SoftNode>(model: T): T {
 export type obj<T = unknown> = Record<string, T>;
 
 // Returns if data is a non-null object
-export function isObject(data: any): data is obj {
+export function isObject(data: unknown): data is obj {
   return typeof data === 'object' && data !== null;
 }
 
@@ -48,21 +48,21 @@ export type mEmptyObj = typeof mEmptyObj;
 
 
 // Checks if the given argument is a Node. Can be a VarNode.
-export function isNode(data: any): data is Node {
-  return isObject(data) && data.hasOwnProperty('_key');
+export function isNode(data: unknown): data is Node {
+  return isObject(data) && Object.prototype.hasOwnProperty.call(data, '_key');
 }
 
 // Checks if the given argument is a VarNode.
-export function isVarNode(data: any): boolean {
+export function isVarNode(data: unknown): boolean {
   return isNode(data) && data._key === '$';
 }
 
 // If data is a Node and have a VarNode as child, return this VarNode obj. Else, null.
-export function getVarNodeChildKey(childrenData: any): string | undefined {
+export function getVarNodeChildKey(childrenData: unknown): string | undefined {
   if (!isObject(childrenData))
     return undefined;
   // Should have just one child.
-  return Object.entries(childrenData).find(([key, data]) => isVarNode(data))?.[0];
+  return Object.entries(childrenData).find(([, data]) => isVarNode(data))?.[0];
 }
 
 
@@ -79,7 +79,7 @@ export function getNodeChild(model: SoftNode, _nodeChildKey: string): SoftNode {
 
 
 
-export function getNodeChildrenKeys(children: any): string[] {
+export function getNodeChildrenKeys(children: unknown): string[] {
   if (!isObject(children))
     return [];
   const result: string[] = [];

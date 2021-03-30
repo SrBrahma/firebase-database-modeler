@@ -2,9 +2,11 @@
 
 # Firebase Database Modeler
 
-[![npm version](https://badge.fury.io/js/firebase-database-modeler.svg)](https://www.npmjs.com/package/firebase-database-modeler)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 [![TypeScript](https://badgen.net/npm/types/env-var)](http://www.typescriptlang.org/)
+[![npm](https://img.shields.io/npm/v/firebase-database-modeler)](https://www.npmjs.com/package/firebase-database-modeler)
+[![npm](https://img.shields.io/npm/dt/firebase-database-modeler)](https://www.npmjs.com/package/firebase-database-modeler)
+
 
 </div>
 
@@ -42,7 +44,8 @@ const stores = _('stores', {
   $storeId: _$({
     name: _<string>('n'), // The DB property key can be different from the model property key!
     rating: _<number>('rating'),
-    open: _<boolean>('open')
+    open: _<boolean>('open'),
+    optionalProp: _<number | null>('oP'), // You can tag the model property as optional by adding `| null`.
     users: _('users', {
       $userId: _$({
         name: _<string>('name')

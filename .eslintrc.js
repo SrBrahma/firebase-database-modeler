@@ -1,4 +1,4 @@
-{
+module.exports = {
   "env": {
     "es6": true,
     "node": true
@@ -14,8 +14,10 @@
   },
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "ecmaVersion": 11,
-    "sourceType": "module"
+    "ecmaVersion": 12,
+    "sourceType": "module",
+    "tsconfigRootDir": __dirname,
+    "project": "./tsconfig.json"
   },
   "plugins": ["@typescript-eslint"],
   "rules": {
@@ -28,4 +30,4 @@
     "comma-spacing": ["warn"],
     "object-curly-spacing": ["warn", "always"]
   }
-}
+};

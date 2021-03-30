@@ -3,9 +3,11 @@ import {
   ref, cloneModel, dataToDb, dataFromDb, onceVal,
   onVal, exists, pathWithVars, set, update, push, remove, pathTo, Database, recursiveModelApplicator, transaction
 } from './functions';
-import { ModelLikeDbData, Id } from './types';
+import { ModelLikeDbData, Id, TransactionResult, DataFromDb } from './types';
 import { getVarNodeChildKey, getNodeChildrenKeys, obj } from './utils';
 
+
+type NullableModelLike<T> = Id<ModelLikeDbData<T>> | null;
 
 type IsChildVarNode<Child> = Child[keyof Child] extends SoftVarNode ? true : false;
 
@@ -61,24 +63,27 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<{
   readonly _dataToDb: (data: ModelLikeDbData<ChildrenOrType>) => any;
 
   /** Enter the DB-like object and it returns a model-like object. */
-  readonly _dataFromDb: (data: any) => ModelLikeDbData<ChildrenOrType>;
+  readonly _dataFromDb: (data: DataFromDb) => NullableModelLike<ChildrenOrType>;
 
   // DB operations
   readonly _ref: (vars?: string | string[], database?: Database) => Reference;
 
-  readonly _onceVal: (event: EventType, vars?: string | string[], database?: Database) => Promise<ModelLikeDbData<ChildrenOrType> | null>;
+  readonly _onceVal: (event: EventType, vars?: string | string[], database?: Database) => Promise<NullableModelLike<ChildrenOrType>>;
 
-  readonly _onVal: (event: EventType, callback: (val: ModelLikeDbData<ChildrenOrType> | null) => void, vars?: string | string[], database?: Database) => Reference;
+  readonly _onVal: (event: EventType, callback: (val: NullableModelLike<ChildrenOrType>) => void, vars?: string | string[], database?: Database) => Reference;
 
   /** Same as RTDB transaction, but will _dataFromDb the callback parameter, and will _dataToDb the return
    * of the callback.
    *
    * As the original function, it returns the promise of the resulting successful value at the current time.
+   *
+   * https://firebase.google.com/docs/reference/node/firebase.database.Reference#transaction
    * */
   readonly _transaction: (
-    callback: (current: ModelLikeDbData<ChildrenOrType> | null) => ModelLikeDbData<ChildrenOrType> | null | undefined,
+    callback: (current: NullableModelLike<ChildrenOrType>) => NullableModelLike<ChildrenOrType> | undefined,
+    applyLocaly?: boolean,
     vars?: string | string[], database?: Database
-  ) => Promise<ModelLikeDbData<ChildrenOrType> | null>;
+  ) => Promise<TransactionResult<NullableModelLike<ChildrenOrType>>>;
 
   readonly _exists: (vars?: string | string[], database?: Database) => Promise<boolean>;
 
@@ -175,9 +180,6 @@ export type AllNodeKeys = keyof Node<unknown>;
 export function _<ChildrenOrType, Key extends string = string>(key: Key, children?: ChildrenOrType)
   : Node<ChildrenOrType, Key> {
 
-  // TODO: Rename this
-  type LocalModelLikeDbData = ModelLikeDbData<ChildrenOrType>;
-
   const model: Node<ChildrenOrType, Key> = {
     _varNodeChildKey: getVarNodeChildKey(children),
     _nodesChildrenKeys: getNodeChildrenKeys(children),
@@ -191,33 +193,33 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
     _pathTo(targetModel: SoftNode, vars?: string | string[]): string {
       return pathTo(this, targetModel, vars);
     },
-    _dataToDb(obj: LocalModelLikeDbData): any {
+    _dataToDb(obj: ModelLikeDbData<ChildrenOrType>): any {
       return dataToDb(this, obj);
     },
-    _dataFromDb(data: any): LocalModelLikeDbData | null {
+    _dataFromDb(data: DataFromDb): NullableModelLike<ChildrenOrType> {
       return dataFromDb(this, data);
     },
 
     _ref(vars?: string | string[], database?: Database): Reference {
       return ref(this, vars, database);
     },
-    _onceVal(event: EventType, vars?: string | string[], database?: Database): Promise<LocalModelLikeDbData | null> {
+    _onceVal(event: EventType, vars?: string | string[], database?: Database): Promise<NullableModelLike<ChildrenOrType>> {
       return onceVal(this, event, vars, database);
     },
-    _onVal(event: EventType, callback: (val: LocalModelLikeDbData | null) => void, vars?: string | string[], database?: Database): Reference {
+    _onVal(event: EventType, callback: (val: NullableModelLike<ChildrenOrType>) => void, vars?: string | string[], database?: Database): Reference {
       return onVal(this, event, callback, vars, database);
     },
-    _transaction(callback: (current: ModelLikeDbData<ChildrenOrType> | null) => ModelLikeDbData<ChildrenOrType> | null | undefined,
-      vars?: string | string[], database?: Database): Promise<ModelLikeDbData<ChildrenOrType> | null> {
-      return transaction(this, callback, vars, database);
+    _transaction(callback: (current: NullableModelLike<ChildrenOrType>) => NullableModelLike<ChildrenOrType> | undefined,
+      applyLocaly?: boolean, vars?: string | string[], database?: Database): Promise<TransactionResult<NullableModelLike<ChildrenOrType>>> {
+      return transaction(this, callback, applyLocaly, vars, database);
     },
     _exists(vars?: string | string[], database?: Database): Promise<boolean> {
       return exists(this, vars, database);
     },
-    _set(value: LocalModelLikeDbData, vars?: string | string[], database?: Database) {
+    _set(value: ModelLikeDbData<ChildrenOrType>, vars?: string | string[], database?: Database) {
       return set(this, value, vars, database);
     },
-    _update(value: Partial<LocalModelLikeDbData>, vars?: string | string[], database?: Database) {
+    _update(value: Partial<ModelLikeDbData<ChildrenOrType>>, vars?: string | string[], database?: Database) {
       return update(this, value, vars, database);
     },
     // value parameter is set as any here to simplify. Its type is on Node.
@@ -232,8 +234,8 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
       return cloneModel(this, vars, database, blockDatabase);
     },
 
-    _dbType: undefined as any as LocalModelLikeDbData,
-    _dbTypeNoNull: undefined as any as LocalModelLikeDbData,
+    _dbType: undefined as any as ModelLikeDbData<ChildrenOrType>,
+    _dbTypeNoNull: undefined as any as ModelLikeDbData<ChildrenOrType>,
 
     ...(key === '/') && {
       _onConnected(callback: (val: boolean) => void, database?: Database): Reference {
