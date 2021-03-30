@@ -7,7 +7,7 @@ import { ModelLikeDbData, Id, TransactionResult, DataFromDb } from './types';
 import { getVarNodeChildKey, getNodeChildrenKeys, obj } from './utils';
 
 
-type NullableModelLike<T> = Id<ModelLikeDbData<T>> | null;
+type NullableModelLike<T> = ModelLikeDbData<T> | null;
 
 type IsChildVarNode<Child> = Child[keyof Child] extends SoftVarNode ? true : false;
 
@@ -63,14 +63,14 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<{
   readonly _dataToDb: (data: ModelLikeDbData<ChildrenOrType>) => any;
 
   /** Enter the DB-like object and it returns a model-like object. */
-  readonly _dataFromDb: (data: DataFromDb) => NullableModelLike<ChildrenOrType>;
+  readonly _dataFromDb: (data: DataFromDb) => Id<NullableModelLike<ChildrenOrType>>;
 
   // DB operations
   readonly _ref: (vars?: string | string[], database?: Database) => Reference;
 
-  readonly _onceVal: (event: EventType, vars?: string | string[], database?: Database) => Promise<NullableModelLike<ChildrenOrType>>;
+  readonly _onceVal: (event: EventType, vars?: string | string[], database?: Database) => Promise<Id<NullableModelLike<ChildrenOrType>>>;
 
-  readonly _onVal: (event: EventType, callback: (val: NullableModelLike<ChildrenOrType>) => void, vars?: string | string[], database?: Database) => Reference;
+  readonly _onVal: (event: EventType, callback: (val: Id<NullableModelLike<ChildrenOrType>>) => void, vars?: string | string[], database?: Database) => Reference;
 
   /** Same as RTDB transaction, but will _dataFromDb the callback parameter, and will _dataToDb the return
    * of the callback.
@@ -80,10 +80,10 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<{
    * https://firebase.google.com/docs/reference/node/firebase.database.Reference#transaction
    * */
   readonly _transaction: (
-    callback: (current: NullableModelLike<ChildrenOrType>) => NullableModelLike<ChildrenOrType> | undefined,
+    callback: (current: Id<NullableModelLike<ChildrenOrType>>) => Id<NullableModelLike<ChildrenOrType>> | undefined,
     applyLocaly?: boolean,
     vars?: string | string[], database?: Database
-  ) => Promise<TransactionResult<NullableModelLike<ChildrenOrType>>>;
+  ) => Promise<Id<TransactionResult<NullableModelLike<ChildrenOrType>>>>;
 
   readonly _exists: (vars?: string | string[], database?: Database) => Promise<boolean>;
 

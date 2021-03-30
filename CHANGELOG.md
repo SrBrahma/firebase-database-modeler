@@ -1,4 +1,4 @@
-## 2.7.3 - March 29th, 2021
+## 2.7.3~4 - March 29th, 2021
 
 * Added Id<> wrapper to NullableModelLike<>. This improves the return type of ._onceVal, ._dataFromDb etc.
 
