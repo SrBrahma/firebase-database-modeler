@@ -3,7 +3,7 @@ import {
   ref, cloneModel, dataToDb, dataFromDb, onceVal,
   onVal, exists, pathWithVars, set, update, push, remove, pathTo, Database, recursiveModelApplicator, transaction
 } from './functions';
-import { ModelLikeDbData, Id, TransactionResult, DataFromDb } from './types';
+import { ModelLikeDbData, Id, TransactionResult, DataFromDb, UpdateParam } from './types';
 import { getVarNodeChildKey, getNodeChildrenKeys, obj } from './utils';
 
 
@@ -89,7 +89,7 @@ export type Node<ChildrenOrType = unknown, Key extends string = string> = Id<{
 
   readonly _set: (value: ModelLikeDbData<ChildrenOrType>, vars?: string | string[], database?: Database) => Promise<any>;
 
-  readonly _update: (value: Partial<ModelLikeDbData<ChildrenOrType>>, vars?: string | string[], database?: Database) => Promise<any>;
+  readonly _update: (value: UpdateParam<ModelLikeDbData<ChildrenOrType>>, vars?: string | string[], database?: Database) => Promise<any>;
 
 
   // TODO: improve _push rtn type? Generic conditional for ValType === undefined ? Reference : Promise<Reference> ?
@@ -219,7 +219,7 @@ export function _<ChildrenOrType, Key extends string = string>(key: Key, childre
     _set(value: ModelLikeDbData<ChildrenOrType>, vars?: string | string[], database?: Database) {
       return set(this, value, vars, database);
     },
-    _update(value: Partial<ModelLikeDbData<ChildrenOrType>>, vars?: string | string[], database?: Database) {
+    _update(value: UpdateParam<ModelLikeDbData<ChildrenOrType>>, vars?: string | string[], database?: Database) {
       return update(this, value, vars, database);
     },
     // value parameter is set as any here to simplify. Its type is on Node.

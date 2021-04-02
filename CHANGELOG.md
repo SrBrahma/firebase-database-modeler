@@ -1,3 +1,7 @@
+## 2.8.0 - April 1th, 2021. Not a joke :P
+
+* `._update()` data now may be `null` if it has the `undefined` type, so the developer may remove a optional property while updating, as passing `undefined` keeps the value.
+
 ## 2.7.3~4 - March 29th, 2021
 
 * Added Id<> wrapper to NullableModelLike<>. This improves the return type of ._onceVal, ._dataFromDb etc.

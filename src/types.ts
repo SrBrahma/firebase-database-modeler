@@ -126,6 +126,19 @@ export type NullUndefinedPropsToOptional<T> =
     : Id<KeysToOptional<T, NullableAndUndefinedKeys<T>>>
   ) : T;
 
+
+  type AddNullIfUndefined<T> = T extends undefined ? T | null : T
+  /** Adds null type to the given type (obj or simple) if it has undefined.
+   *
+   * Single level. */
+  type AddNullToUndefined<T> = T extends obj
+    ? {[K in keyof T]: AddNullIfUndefined<T[K]>} // couldn't add the check here directly for TS distributive working reasons
+    : AddNullIfUndefined<T>
+
+/** So the dev can remove a property (pass null) if it is undefinable. */
+export type UpdateParam<T> = Partial<AddNullToUndefined<T>>
+
+
 // https://stackoverflow.com/a/61132308/10247962
 // type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
 

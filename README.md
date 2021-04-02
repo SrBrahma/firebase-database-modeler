@@ -330,7 +330,9 @@ Same as `model._ref(vars).set(model._dataToDb(value))`, with type checking on va
 
 Same as `model._ref(vars).update(model._dataToDb(value))`, with type checking on value.
 
-As the value have a Partial<> wrapping the ModelLikeDbData, its root properties are optional.
+The value or its children are all optional/undefined, as `update` in RTDB only changes the defined properties and keeps the current value of the undefined ones.
+
+Also, you may now (2.8.0) pass `null` to optional properties to remove the current value.
 
 
 <br/>
